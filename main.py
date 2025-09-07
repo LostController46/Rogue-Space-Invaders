@@ -1,9 +1,10 @@
 import pygame
+import random
 
 pygame.init()
 
 SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 900
+SCREEN_HEIGHT = 960
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Rogue Space Invaders")
 clock = pygame.time.Clock()
@@ -26,10 +27,61 @@ lastShotTime = 0
 
 #Enemy code
 enemies = []
+enemyBullets = []
+enemyHP = 1
 enemySPD = 3
+enemyDelay = 1000
+enemySpawnDelay = 2000
 lastSpawnTime = 0
+lastEnemyShotTime = 0
+class Enemy:
+    def __init__(self, x, y, width = 50, height = 50, speed = enemySPD, color = (255,0,0)):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.speed = speed
+        self.color = color
+        self.health = enemyHP
+    def update(self):
+        self.rect.y += self.speed
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect)
+class Shooter(Enemy):
+    def __init__(self, x, y, width = 60 , height = 30, speed = enemySPD + 2):
+        super().__init__(x, y, width, height, speed, color = (255,0,255))
+        self.patrolY = 100 + random.randint(-20, 20)
+        self.movingDown = True
+        self.direction = 1 #-1 = Left/1 = Right
+        self.cooldown = enemyDelay
+        self.lastShot = lastEnemyShotTime
+    def update(self, currentTime, enemyBullets, player):
+        #Has the shooter move into position
+        if self.movingDown:
+            self.rect.y += self.speed
+            if self.rect.y >= self.patrolY:
+                self.movingDown = False
+        #Once in position patrol their Y
+        else:
+            self.rect.x += self.speed * self.direction
+            if self.rect.right >= SCREEN_WIDTH:
+                self.rect.right = SCREEN_WIDTH
+                self.direction = -1
+            elif self.rect.left <=0:
+                self.rect.left = 0
+                self.direction = 1
+            #Only shoots when the player is near enough with some variance
+            if player and abs(self.rect.centerx - player.centerx) < 100 + random.randint(-90,0):
+                if currentTime - self.lastShot >= self.cooldown:
+                    bullet = pygame.Rect(self.rect.centerx - 5, self.rect.bottom, 10, 20)
+                    enemyBullets.append(bullet)
+                    self.lastShot = currentTime
 
-
+#Enemy Types
+enemyBasic = 0
+enemyShooter = 1
+enemyCharger = 2
+enemyBlocker = 3
+enemyCombustionT = 4
+enemyCombustionX = 5
+boss = 23
 
 
 #Game States: MainMenu Gameplay, Controls, Pause, Map
@@ -56,6 +108,7 @@ def drawMainMenu(selected):
 
 def gameplay():
     global lastShotTime
+    global lastSpawnTime
     key = pygame.key.get_pressed()
     currentTime = pygame.time.get_ticks()
 
@@ -78,15 +131,58 @@ def gameplay():
             if shot.bottom < 0:
                 bullet.remove(shot)
 
+    #Update enemies
+    for enemy in enemies[:]:
+        if isinstance(enemy, Shooter):
+            enemy.update(currentTime, enemyBullets, player)
+        else:
+            enemy.update()
+
+        if enemy.rect.top > SCREEN_HEIGHT:
+            enemy.rect.y = -50
+            enemy.rect.x = random.randint(0, SCREEN_WIDTH - enemy.rect.width)
+
+    #Enemy gets hit by a bullet
+    for enemy in enemies[:]:
+        for shot in bullet[:]:
+            if enemy.rect.colliderect(shot):
+                bullet.remove(shot)
+                enemy.health -= 1
+                if enemy.health <= 0:
+                    enemies.remove(enemy)
+                break
+
+    #Draws the player, bullets, enemies, and their bullets
     screen.fill((0,0,0))
     pygame.draw.rect(screen, (0, 255, 0), player)
     for shot in bullet:
         pygame.draw.rect(screen, (255, 255, 255), shot)
+    for enemy in enemies:
+        enemy.draw(screen)
+    for enemyBull in enemyBullets[:]:
+        enemyBull.y += 5
+        if enemyBull.top > SCREEN_HEIGHT:
+            enemyBullets.remove(enemyBull)
+        else:
+            pygame.draw.rect(screen, (255, 255, 0), enemyBull)
+
+    #Enemy spawning & which type
+    if currentTime - lastSpawnTime > enemySpawnDelay:
+        enemyX = random.randint(0, SCREEN_WIDTH - 50)
+        enemyType = random.choice(["Basic", "Shooter"])    #add other enemies here
+
+        if enemyType == "Basic":
+            #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
+            enemies.append(Enemy(enemyX, -50))
+        elif enemyType == "Shooter":
+            enemies.append(Shooter(enemyX, -50))
+        
+        lastSpawnTime = currentTime
 
 #def drawMap():
 
 
-#Main Loop
+#--Main Loop--#
 run = True
 selectedOption = 0
 
@@ -97,9 +193,9 @@ while run:
             run = False
         if state == "MainMenu":
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_w:
                     selectedOption = (selectedOption - 1) % len(menu_options)
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_s:
                     selectedOption = (selectedOption + 1) % len(menu_options)
                 elif event.key == pygame.K_RETURN:
                     if selectedOption == 0:
