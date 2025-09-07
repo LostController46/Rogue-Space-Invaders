@@ -1,0 +1,13 @@
+9/6/25
+Resizing the game forced the player into the middle, will correct soon.
+Added Menus before going further because it caused a lot of code to be moved around.
+Started work on the enemies.
+Need to fix player controls to add a charged shot.
+
+
+9/7/25
+Had a bug on how the movement of the shooter enemy. Should be fixed now.
+Learned that classes initilize the number given forever, has to be inside
+the class in order to get random numbers.
+Should have a button that lets the player slow down to get more percise movement.
+Also need to work on the shoot not working when the player is moving.
