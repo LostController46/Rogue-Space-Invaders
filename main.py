@@ -4,7 +4,7 @@ import random
 pygame.init()
 
 SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 960
+SCREEN_HEIGHT = 860
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Rogue Space Invaders")
 clock = pygame.time.Clock()
@@ -13,17 +13,37 @@ smallFont = pygame.font.Font(None, 50)
 
 
 #Player code
+playerHP = 5
 playerSPD = 15
-playerATK = 1
 player = pygame.Rect((300, 500, 50, 50))
 
 #Bullet code
 bullet = []
+bulletATK = 1
 bulletSPD = 20
-BulletWidth = 10
-BulletHeight = 30
+bulletWidth = 10
+bulletHeight = 30
 shotDelay = 300
 lastShotTime = 0
+
+#Charged Shot code
+chargedShot = []
+chargedShotATK = bulletATK * 2
+chargedShotSPD = 30
+charging = False
+chargingStart = 0
+maxChargeTime = 2000
+class Bullet:
+    def __init__(self, x, y, width, height, speed, damage, color):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.speed = speed
+        self.damage = damage
+        self.color = color
+    def update(self):
+        self.rect.y -= self.speed
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect)
+
 
 #Enemy code
 enemies = []
@@ -74,15 +94,6 @@ class Shooter(Enemy):
                     enemyBullets.append(bullet)
                     self.lastShot = currentTime
 
-#Enemy Types
-enemyBasic = 0
-enemyShooter = 1
-enemyCharger = 2
-enemyBlocker = 3
-enemyCombustionT = 4
-enemyCombustionX = 5
-boss = 23
-
 
 #Game States: MainMenu Gameplay, Controls, Pause, Map
 state = "MainMenu"  #Where the game starts
@@ -109,26 +120,50 @@ def drawMainMenu(selected):
 def gameplay():
     global lastShotTime
     global lastSpawnTime
+    global charging
+    global chargingStart
+    global maxChargeTime
     key = pygame.key.get_pressed()
+    global currentTime 
     currentTime = pygame.time.get_ticks()
 
     #Movement for player
-    if key[pygame.K_a] and player.left > 0:
+    if key[pygame.K_LCTRL] and key[pygame.K_a] and player.left > 0:
+        player.x -= playerSPD / 2
+    elif key[pygame.K_LCTRL] and key[pygame.K_d] and player.right > 0:
+        player.x += playerSPD / 2
+    elif key[pygame.K_a] and player.left > 0:
         player.x -= playerSPD
     elif key[pygame.K_d] and player.right < SCREEN_WIDTH:
         player.x += playerSPD
+        
     
     #Action for shooting
-    elif key[pygame.K_w] and currentTime - lastShotTime >= shotDelay:
-        bulletX = player.centerx - BulletWidth
+    #Charged Shot
+    if key[pygame.K_w] and key[pygame.K_LSHIFT] and currentTime - lastShotTime >= shotDelay:
+        if not charging:
+            charging = True
+            chargingStart = currentTime
+    elif charging and (not key[pygame.K_w] or not key[pygame.K_LSHIFT]):
+        charging = False 
+        chargeDuration = currentTime - chargingStart
+        fullyCharged = chargeDuration >= maxChargeTime
+        chargedShotX = player.centerx - bulletWidth
+        chargedShotY = player.top
+        if fullyCharged:
+            bullet.append(Bullet(chargedShotX, chargedShotY, bulletWidth, bulletHeight, chargedShotSPD, chargedShotATK, color=(235, 180, 52)))
+            lastShotTime = currentTime
+    #Normal shot
+    elif key[pygame.K_w] and currentTime - lastShotTime >= shotDelay and not key[pygame.K_LSHIFT]:
+        bulletX = player.centerx - bulletWidth
         bulletY = player.top
-        bullet.append(pygame.Rect(bulletX, bulletY, BulletWidth, BulletHeight))
+        bullet.append(Bullet(bulletX, bulletY, bulletWidth, bulletHeight, bulletSPD, bulletATK, color=(255,255,255)))
         lastShotTime = currentTime
-
+    
     #Update bullets
     for shot in bullet[:]:
-            shot.y -= bulletSPD
-            if shot.bottom < 0:
+            shot.update()
+            if shot.rect.bottom < 0:
                 bullet.remove(shot)
 
     #Update enemies
@@ -145,9 +180,9 @@ def gameplay():
     #Enemy gets hit by a bullet
     for enemy in enemies[:]:
         for shot in bullet[:]:
-            if enemy.rect.colliderect(shot):
+            if enemy.rect.colliderect(shot.rect):
+                enemy.health -= shot.damage
                 bullet.remove(shot)
-                enemy.health -= 1
                 if enemy.health <= 0:
                     enemies.remove(enemy)
                 break
@@ -156,7 +191,7 @@ def gameplay():
     screen.fill((0,0,0))
     pygame.draw.rect(screen, (0, 255, 0), player)
     for shot in bullet:
-        pygame.draw.rect(screen, (255, 255, 255), shot)
+        shot.draw(screen)
     for enemy in enemies:
         enemy.draw(screen)
     for enemyBull in enemyBullets[:]:
@@ -211,6 +246,19 @@ while run:
         drawMainMenu(selectedOption)
     elif state == "Gameplay":
         gameplay()
+
+    if charging:
+        chargeDuration = currentTime - chargingStart
+        progress = min(chargeDuration / maxChargeTime, 1.0)
+
+        barWidth = player.width
+        barHeight = 8
+        barX = player.x
+        barY = player.bottom + 10
+
+        pygame.draw.rect(screen, (80, 80, 80), (barX, barY, barWidth, barHeight))
+        pygame.draw.rect(screen, (0, 200, 255), (barX, barY, int(barWidth * progress), barHeight))
+    
     pygame.display.update()
 
 pygame.quit()

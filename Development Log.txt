@@ -11,3 +11,10 @@ Learned that classes initilize the number given forever, has to be inside
 the class in order to get random numbers.
 Should have a button that lets the player slow down to get more percise movement.
 Also need to work on the shoot not working when the player is moving.
+
+9/12/25
+Worked on the shooting mechanic for the Player. Fix was to make it so movement
+and the shoot are not in the same if-else branch. Added slow movement for
+more precision movement. Add a new class for bullets to make adding new
+bullets and to make the charged shot implementation easier. Add a progress
+bar for the charged shot so to see how close it is to done.
