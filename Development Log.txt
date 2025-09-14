@@ -4,7 +4,6 @@ Added Menus before going further because it caused a lot of code to be moved aro
 Started work on the enemies.
 Need to fix player controls to add a charged shot.
 
-
 9/7/25
 Had a bug on how the movement of the shooter enemy. Should be fixed now.
 Learned that classes initilize the number given forever, has to be inside
@@ -18,3 +17,16 @@ and the shoot are not in the same if-else branch. Added slow movement for
 more precision movement. Add a new class for bullets to make adding new
 bullets and to make the charged shot implementation easier. Add a progress
 bar for the charged shot so to see how close it is to done.
+
+9/13/25
+Added new enemy called the Charger. Rushes towards the player to attack them.
+Another enemy type was created called the Blocker. Will not take damage from normal
+shots, they must be charged. Rebound the Focus and Charging Keys. Started work on
+Combustion enemy type, had an issue with the bullets only moving down. Unknown fix at
+this time.
+
+9/14/25
+Figured out that the Bullet class needed a direction added to make it so the bullets
+have a direction they move in. This lead to fixing Shooter, how enemyBullets despawns
+bullets, and the player's bulletsafter implementing directions to the Bullet class.
+The first Boss will be worked on next time.
