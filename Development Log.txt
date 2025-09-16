@@ -30,3 +30,8 @@ Figured out that the Bullet class needed a direction added to make it so the bul
 have a direction they move in. This lead to fixing Shooter, how enemyBullets despawns
 bullets, and the player's bulletsafter implementing directions to the Bullet class.
 The first Boss will be worked on next time.
+
+9/15/25
+Began work on making a Player class to implement changes to add Health to the player,
+and damage. Player can now take damages, has immunity frames, and despawns when killed.
+

@@ -13,9 +13,72 @@ smallFont = pygame.font.Font(None, 50)
 
 
 #Player code
-playerHP = 5
-playerSPD = 15
-player = pygame.Rect((300, 500, 50, 50))
+class Player:
+    def __init__(self, x = 300, y = 500, width = 50, height = 50, health = 20, speed = 15, damage = 1):
+        self.rect = pygame.Rect((x, y, width, height))
+        self.speed = speed
+        self.damage = damage
+        self.health = health
+        #Charge Shot
+        self.charging = False
+        self.chargingStart = 0
+        self.lastShotTime = 0
+        self.shotDelay = 300
+        #Health & Immunity Frames
+        self.alive = True
+        self.immune = False
+        self.immuneTime = 0
+        self.immuneFrames = 1000
+
+    def update(self, key, currentTime):
+        #Movement for player
+        if key[pygame.K_RCTRL] and key[pygame.K_a] and self.rect.left > 0:
+            self.rect.x -= self.speed / 2
+        elif key[pygame.K_RCTRL] and key[pygame.K_d] and self.rect.right < SCREEN_WIDTH:
+            self.rect.x += self.speed / 2
+        elif key[pygame.K_a] and self.rect.left > 0:
+            self.rect.x -= self.speed
+        elif key[pygame.K_d] and self.rect.right < SCREEN_WIDTH:
+            self.rect.x += self.speed
+        #Action for shooting
+        #Charged Shot
+        if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - self.lastShotTime >= self.shotDelay:
+            if not self.charging:
+                self.charging = True
+                self.chargingStart = currentTime
+        elif self.charging and (not key[pygame.K_w] or not key[pygame.K_RSHIFT]):
+            self.charging = False 
+            chargeDuration = currentTime - self.chargingStart
+            fullyCharged = chargeDuration >= maxChargeTime
+            chargedShotX = self.rect.centerx - bulletWidth
+            chargedShotY = self.rect.top
+            if fullyCharged:
+                bullet.append(Bullet(chargedShotX, chargedShotY, bulletWidth, bulletHeight, 
+                                    chargedShotSPD, chargedShotATK, color=(235, 180, 52), 
+                                    direction = "N", charged=True))
+                self.lastShotTime = currentTime
+        #Normal shot
+        elif key[pygame.K_w] and currentTime - self.lastShotTime >= self.shotDelay and not key[pygame.K_RSHIFT]:
+            bulletX = self.rect.centerx - bulletWidth
+            bulletY = self.rect.top
+            bullet.append(Bullet(bulletX, bulletY, bulletWidth, bulletHeight, 
+                                bulletSPD, self.damage, color=(255,255,255), direction = "N"))
+            self.lastShotTime = currentTime
+        if self.immune and currentTime - self.immuneTime >= self.immuneFrames:
+            self.immune = False
+    def takeDamage(self, amount, currentTime):
+        if self.alive:
+            if not self.immune:
+                self.health -= amount
+                self.immune = True
+                self.immuneTime = currentTime
+                if self.health <= 0:
+                    self.health = 0
+                    self.alive = False
+                    #Send to Game Over Screen
+    def draw(self, screen):
+        pygame.draw.rect(screen, (0, 255, 0), self.rect)
+player = Player()
 
 #Bullet code
 bullet = []
@@ -70,11 +133,12 @@ enemySpawnDelay = 2000
 lastSpawnTime = 0
 lastEnemyShotTime = 0
 class Enemy:
-    def __init__(self, x, y, width = 50, height = 50, speed = enemySPD, color = (255,0,0)):
+    def __init__(self, x, y, width = 50, height = 50, speed = enemySPD, color = (255,0,0), damage = 1):
         self.rect = pygame.Rect(x, y, width, height)
         self.speed = speed
         self.color = color
         self.health = enemyHP
+        self.damage = damage
     def update(self):
         self.rect.y += self.speed
     def draw(self, screen):
@@ -87,6 +151,7 @@ class Shooter(Enemy):
         self.direction = 1 #-1 = Left/1 = Right
         self.cooldown = enemyDelay
         self.lastShot = lastEnemyShotTime
+        self.damage = 1
     def update(self, currentTime, enemyBullets, player):
         #Has the shooter move into position
         if self.movingDown:
@@ -103,7 +168,7 @@ class Shooter(Enemy):
                 self.rect.left = 0
                 self.direction = 1
             #Only shoots when the player is near enough with some variance
-            if player and abs(self.rect.centerx - player.centerx) < 100 + random.randint(-100,0):
+            if player and abs(self.rect.centerx - player.rect.centerx) < 100 + random.randint(-100,0):
                 if currentTime - self.lastShot >= self.cooldown:
                     enemyBullets.append(Bullet(self.rect.centerx - 5, self.rect.bottom, 10, 20, 6, 1, 
                                                (255, 255, 0), direction = "S"))
@@ -112,9 +177,10 @@ class Charger(Enemy):
     def __init__(self, x, y, width = 40, height = 50, speed = enemySPD + 4):
         super().__init__(x, y, width, height, speed, color = (255,165,0))
         self.health = enemyHP + 1
+        self.damage = 2
     def update(self, player):
-        dx = player.centerx - self.rect.centerx
-        dy = player.centery - self.rect.centery
+        dx = player.rect.centerx - self.rect.centerx
+        dy = player.rect.centery - self.rect.centery
         #Normalize the vector to get more consistent speed
         distance = (dx * dx + dy * dy) ** 0.5
         if distance != 0:
@@ -128,6 +194,7 @@ class Blocker(Enemy):
         self.patrolY = 140 + random.randint(-20, 20)
         self.movingDown = True
         self.direction = 1 #-1 = Left/1 = Right
+        self.damage = 0
     def update(self):
         if self.movingDown:
             self.rect.y += self.speed
@@ -150,6 +217,7 @@ class Combustion(Enemy):
         super().__init__(x, y, width, height, speed, color = (172, 216, 230))
         self.health = enemyHP
         self.type = random.choice(["T", "X"])
+        self.damage = 1
     def update(self):
         self.rect.y += self.speed
     def onDeath(self, enemyBullets):
@@ -192,46 +260,11 @@ def gameplay():
     global charging
     global chargingStart
     global maxChargeTime
-    key = pygame.key.get_pressed()
-    global currentTime 
-    currentTime = pygame.time.get_ticks()
+    global currentTime
 
-    #Movement for player
-    if key[pygame.K_RCTRL] and key[pygame.K_a] and player.left > 0:
-        player.x -= playerSPD / 2
-    elif key[pygame.K_RCTRL] and key[pygame.K_d] and player.right > 0:
-        player.x += playerSPD / 2
-    elif key[pygame.K_a] and player.left > 0:
-        player.x -= playerSPD
-    elif key[pygame.K_d] and player.right < SCREEN_WIDTH:
-        player.x += playerSPD
-        
-    
-    #Action for shooting
-    #Charged Shot
-    if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - lastShotTime >= shotDelay:
-        if not charging:
-            charging = True
-            chargingStart = currentTime
-    elif charging and (not key[pygame.K_w] or not key[pygame.K_RSHIFT]):
-        charging = False 
-        chargeDuration = currentTime - chargingStart
-        fullyCharged = chargeDuration >= maxChargeTime
-        chargedShotX = player.centerx - bulletWidth
-        chargedShotY = player.top
-        if fullyCharged:
-            bullet.append(Bullet(chargedShotX, chargedShotY, bulletWidth, bulletHeight, 
-                                 chargedShotSPD, chargedShotATK, color=(235, 180, 52), 
-                                 direction = "N", charged=True))
-            lastShotTime = currentTime
-    #Normal shot
-    elif key[pygame.K_w] and currentTime - lastShotTime >= shotDelay and not key[pygame.K_RSHIFT]:
-        bulletX = player.centerx - bulletWidth
-        bulletY = player.top
-        bullet.append(Bullet(bulletX, bulletY, bulletWidth, bulletHeight, 
-                             bulletSPD, bulletATK, color=(255,255,255), direction = "N"))
-        lastShotTime = currentTime
-    
+    key = pygame.key.get_pressed()
+    currentTime = pygame.time.get_ticks()
+    player.update(key, currentTime)
     #Update bullets
     for shot in bullet[:]:
             shot.update()
@@ -244,8 +277,12 @@ def gameplay():
             enemy.update(currentTime, enemyBullets, player)
         elif isinstance(enemy, Charger):
             enemy.update(player)
+            if enemy.rect.colliderect(player.rect):
+                player.takeDamage(enemy.damage, currentTime)
         else:
             enemy.update()
+            if enemy.rect.colliderect(player.rect):
+                player.takeDamage(enemy.damage, currentTime)
 
         if enemy.rect.top > SCREEN_HEIGHT:
             enemy.rect.y = -50
@@ -268,7 +305,8 @@ def gameplay():
 
     #Draws the player, bullets, enemies, and their bullets
     screen.fill((0,0,0))
-    pygame.draw.rect(screen, (0, 255, 0), player)
+    if player.alive:
+        player.draw(screen)
     for shot in bullet:
         shot.draw(screen)
     for enemy in enemies:
@@ -276,6 +314,9 @@ def gameplay():
     for enemyBull in enemyBullets[:]:
         enemyBull.update()
         if enemyBull.rect.top > SCREEN_HEIGHT or enemyBull.rect.bottom < 0 or enemyBull.rect.right < 0 or enemyBull.rect.left > SCREEN_WIDTH:
+            enemyBullets.remove(enemyBull)
+        elif enemyBull.rect.colliderect(player.rect):
+            player.takeDamage(1, currentTime)
             enemyBullets.remove(enemyBull)
         else:
             enemyBull.draw(screen)
@@ -333,14 +374,14 @@ while run:
     elif state == "Gameplay":
         gameplay()
 
-    if charging:
-        chargeDuration = currentTime - chargingStart
+    if player.charging:
+        chargeDuration = currentTime - player.chargingStart
         progress = min(chargeDuration / maxChargeTime, 1.0)
 
-        barWidth = player.width
+        barWidth = player.rect.width
         barHeight = 8
-        barX = player.x
-        barY = player.bottom + 10
+        barX = player.rect.x
+        barY = player.rect.bottom + 10
 
         pygame.draw.rect(screen, (80, 80, 80), (barX, barY, barWidth, barHeight))
         pygame.draw.rect(screen, (0, 200, 255), (barX, barY, int(barWidth * progress), barHeight))
