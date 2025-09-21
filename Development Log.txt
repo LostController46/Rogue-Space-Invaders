@@ -35,3 +35,13 @@ The first Boss will be worked on next time.
 Began work on making a Player class to implement changes to add Health to the player,
 and damage. Player can now take damages, has immunity frames, and despawns when killed.
 
+9/20/25
+Changed Controls to a How To Play Button. Added info on controls and what enemy does what.
+Added a Pause Button, that let's you quit to main menu. Charge Shot kept charging while
+paused. Unknown fix at this time. Work started on First Boss. Is a Fusion of Shooter & 
+Blocker enemy types. Need to work on Lasers from boss and have it actually patrol correctly.
+
+9/21/25
+The first Boss has been fixed along with the Lasers. Fixing logic for the Laser was incredibly
+hard to make it follow who shot the bullet. Boss also takes no damage if hit on the main body,
+but does take damage from getting hit on the guns.
