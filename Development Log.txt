@@ -45,3 +45,7 @@ Blocker enemy types. Need to work on Lasers from boss and have it actually patro
 The first Boss has been fixed along with the Lasers. Fixing logic for the Laser was incredibly
 hard to make it follow who shot the bullet. Boss also takes no damage if hit on the main body,
 but does take damage from getting hit on the guns.
+
+9/25/25
+Adding pause as a parameter for everything fixed the main issue with many things moving and
+updating when it shouldn't be possible.

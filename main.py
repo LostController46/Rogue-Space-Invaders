@@ -12,9 +12,9 @@ font = pygame.font.Font(None, 74)
 smallFont = pygame.font.Font(None, 50)
 
 
-#Player code
+#region Player Class
 class Player:
-    def __init__(self, x = 300, y = 500, width = 50, height = 50, health = 20, speed = 15, damage = 1):
+    def __init__(self, x = 640, y = 630, width = 50, height = 50, health = 20, speed = 15, damage = 1):
         self.rect = pygame.Rect((x, y, width, height))
         self.speed = speed
         self.damage = damage
@@ -30,8 +30,10 @@ class Player:
         self.immuneTime = 0
         self.immuneFrames = 1000
 
-    def update(self, key, currentTime):
+    def update(self, key, currentTime, paused):
         #Movement for player
+        if paused:
+            return
         if key[pygame.K_RCTRL] and key[pygame.K_a] and self.rect.left > 0:
             self.rect.x -= self.speed / 2
         elif key[pygame.K_RCTRL] and key[pygame.K_d] and self.rect.right < SCREEN_WIDTH:
@@ -78,6 +80,8 @@ class Player:
                     #Send to Game Over Screen
     def draw(self, screen):
         pygame.draw.rect(screen, (0, 255, 0), self.rect)
+#endregion
+#Player code
 player = Player()
 
 #Bullet code
@@ -96,6 +100,7 @@ chargedShotSPD = 30
 charging = False
 chargingStart = 0
 maxChargeTime = 1000
+#region Bullet Classes
 class Bullet:
     def __init__(self, x, y, width, height, speed, damage, color, direction = "N", charged = False):
         self.rect = pygame.Rect(x, y, width, height)
@@ -104,7 +109,9 @@ class Bullet:
         self.color = color
         self.charged = charged
         self.direction = direction
-    def update(self):
+    def update(self, paused):
+        if paused:
+            return
         dx = 0
         dy = 0
         if "N" in self.direction:
@@ -141,14 +148,15 @@ class Laser(Bullet):
         elif self.direction == "N":
             self.rect.bottom = self.gunRect.top
             self.rect.height = self.rect.bottom
-    def update(self, currentTime):
+    def update(self, currentTime, paused):
+        if paused:
+            return
         self.updatePosition()
         if currentTime - self.spawnTime >= self.duration:
             self.expired = True
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
-
-
+#endregion
 #Enemy code
 enemies = []
 enemyBullets = []
@@ -159,6 +167,7 @@ enemySpawnDelay = 2000
 lastSpawnTime = 0
 lastEnemyShotTime = 0
 bosses = []
+#region Enemy Classes
 class Enemy:
     def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1):
         self.rect = pygame.Rect(x, y, width, height)
@@ -166,7 +175,9 @@ class Enemy:
         self.color = color
         self.health = health
         self.damage = damage
-    def update(self):
+    def update(self, paused):
+        if paused:
+            return
         self.rect.y += self.speed
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
@@ -179,7 +190,9 @@ class Shooter(Enemy):
         self.cooldown = enemyDelay
         self.lastShot = lastEnemyShotTime
         self.damage = 1
-    def update(self, currentTime, enemyBullets, player):
+    def update(self, currentTime, enemyBullets, player, paused):
+        if paused:
+            return
         #Has the shooter move into position
         if self.movingDown:
             self.rect.y += self.speed
@@ -204,7 +217,9 @@ class Charger(Enemy):
     def __init__(self, x, y, width = 40, height = 50, health = enemyHP + 1, speed = enemySPD + 4):
         super().__init__(x, y, width, height, health, speed, color = (255,165,0))
         self.damage = 2
-    def update(self, player):
+    def update(self, player, paused):
+        if paused:
+            return
         dx = player.rect.centerx - self.rect.centerx
         dy = player.rect.centery - self.rect.centery
         #Normalize the vector to get more consistent speed
@@ -220,7 +235,9 @@ class Blocker(Enemy):
         self.movingDown = True
         self.direction = 1 #-1 = Left/1 = Right
         self.damage = 0
-    def update(self):
+    def update(self, paused):
+        if paused:
+            return
         if self.movingDown:
             self.rect.y += self.speed
             if self.rect.y >= self.patrolY:
@@ -242,7 +259,9 @@ class Combustion(Enemy):
         super().__init__(x, y, width, height, health, speed, color = (172, 216, 230))
         self.type = random.choice(["T", "X"])
         self.damage = 1
-    def update(self):
+    def update(self, paused):
+        if paused:
+            return
         self.rect.y += self.speed
     def onDeath(self, enemyBullets):
         if self.type == "T":
@@ -261,7 +280,9 @@ class Boss(Enemy):
         self.patrolY = 100
         self.movingDown = True
         self.alive = True
-    def update(self):
+    def update(self, paused):
+        if paused:
+            return
         if self.movingDown:
             self.rect.y += self.speed
             if self.rect.y >= self.patrolY:
@@ -290,13 +311,17 @@ class BossShooterBlockerFusion(Boss):
         self.firingLaser = False
         self.damage = 2
         self.direction = 1 #-1 = Left/1 = Right
-        self.updateGuns()
-    def updateGuns(self):
+        self.updateGuns(paused)
+    def updateGuns(self, paused):
+        if paused:
+            return
         for gun, rect in self.guns.items():
             rect.x = self.rect.x + self.gunOffset[gun][0]
             rect.y = self.rect.y + self.gunOffset[gun][1]
-    def update(self, currentTime):
-        super().update()
+    def update(self, currentTime, paused):
+        super().update(paused)
+        if paused:
+            return
         if not self.movingDown:
             if self.firingLaser:
                 if currentTime - self.lastLaserShot >= self.laserDuration:
@@ -333,6 +358,7 @@ class BossShooterBlockerFusion(Boss):
             self.health -= amount
         if all(hp <= 0 for hp in self.gunHealth.values()):
             self.alive = False
+#endregion
 
 #Game States: MainMenu Gameplay, How To Play, Map
 state = "MainMenu"  #Where the game starts
@@ -397,80 +423,79 @@ def gameplay():
     currentTime = pygame.time.get_ticks()
     
     #Only update if game isn't paused.
-    if not paused:
-        player.update(key, currentTime)
-        #Update bullets
+    player.update(key, currentTime, paused)
+    #Update bullets
+    for shot in bullet[:]:
+            shot.update(paused)
+            if shot.rect.bottom < 0:
+                bullet.remove(shot)
+
+    #Update enemies
+    for enemy in enemies[:]:
+        if isinstance(enemy, Shooter):
+            enemy.update(currentTime, enemyBullets, player, paused)
+        elif isinstance(enemy, Charger):
+            enemy.update(player, paused)
+            if enemy.rect.colliderect(player.rect):
+                player.takeDamage(enemy.damage, currentTime)
+        else:
+            enemy.update(paused)
+            if enemy.rect.colliderect(player.rect):
+                player.takeDamage(enemy.damage, currentTime)
+
+        if enemy.rect.top > SCREEN_HEIGHT:
+            enemy.rect.y = -50
+            enemy.rect.x = random.randint(0, SCREEN_WIDTH - enemy.rect.width)
+
+    #Enemy & bosses gets hit by a bullet
+    for enemy in enemies[:]:
         for shot in bullet[:]:
-                shot.update()
-                if shot.rect.bottom < 0:
+            if enemy.rect.colliderect(shot.rect):
+                bullet.remove(shot)
+                if isinstance(enemy, Blocker):
+                    enemy.takeDamage(shot.damage, charged=shot.charged)
+                else:
+                    enemy.health -= shot.damage
+                if enemy.health <= 0:
+                    if isinstance(enemy, Combustion):
+                        enemy.onDeath(enemyBullets)
+                    enemies.remove(enemy)
+                    enemiesKilled += 1
+                break
+    for boss in bosses[:]: 
+        for shot in bullet[:]: 
+            bulletRemoved = False 
+            for gun, gunRect in boss.guns.items(): 
+                if shot.rect.colliderect(gunRect): 
+                    boss.takeDamage(shot.damage, gun, charged=shot.charged) 
+                    bulletRemoved = True 
+                    break 
+                if not bulletRemoved and shot.rect.colliderect(boss.rect): 
+                    boss.takeDamage(shot.damage, charged=shot.charged)
+                    bulletRemoved = True
+                #For incase a bullet hit both the boss and gun
+                if bulletRemoved and shot in bullet:
                     bullet.remove(shot)
-
-        #Update enemies
-        for enemy in enemies[:]:
-            if isinstance(enemy, Shooter):
-                enemy.update(currentTime, enemyBullets, player)
-            elif isinstance(enemy, Charger):
-                enemy.update(player)
-                if enemy.rect.colliderect(player.rect):
-                    player.takeDamage(enemy.damage, currentTime)
-            else:
-                enemy.update()
-                if enemy.rect.colliderect(player.rect):
-                    player.takeDamage(enemy.damage, currentTime)
-
-            if enemy.rect.top > SCREEN_HEIGHT:
-                enemy.rect.y = -50
-                enemy.rect.x = random.randint(0, SCREEN_WIDTH - enemy.rect.width)
-
-        #Enemy & bosses gets hit by a bullet
-        for enemy in enemies[:]:
-            for shot in bullet[:]:
-                if enemy.rect.colliderect(shot.rect):
-                    bullet.remove(shot)
-                    if isinstance(enemy, Blocker):
-                        enemy.takeDamage(shot.damage, charged=shot.charged)
-                    else:
-                        enemy.health -= shot.damage
-                    if enemy.health <= 0:
-                        if isinstance(enemy, Combustion):
-                            enemy.onDeath(enemyBullets)
-                        enemies.remove(enemy)
-                        enemiesKilled += 1
-                    break
-        for boss in bosses[:]: 
-            for shot in bullet[:]: 
-                bulletRemoved = False 
-                for gun, gunRect in boss.guns.items(): 
-                    if shot.rect.colliderect(gunRect): 
-                        boss.takeDamage(shot.damage, gun, charged=shot.charged) 
-                        bulletRemoved = True 
-                        break 
-                    if not bulletRemoved and shot.rect.colliderect(boss.rect): 
-                        boss.takeDamage(shot.damage, charged=shot.charged)
-                        bulletRemoved = True
-                    #For incase a bullet hit both the boss and gun
-                    if bulletRemoved and shot in bullet:
-                        bullet.remove(shot)
-        #Enemy & boss spawning & which type
-        if enemiesKilled >= 1 and not bossSpawned:
-            boss = BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
-            bosses.append(boss)
-            bossSpawned = True
-        elif currentTime - lastSpawnTime > enemySpawnDelay and (enemiesKilled < 1):
-            enemyX = random.randint(0, SCREEN_WIDTH - 50)
-            enemyType = random.choice(["Basic", "Shooter", "Charger", "Blocker", "Combustion"])    #add other enemies here
-            if enemyType == "Basic":
-                #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
-                enemies.append(Enemy(enemyX, -50))
-            elif enemyType == "Shooter":
-                enemies.append(Shooter(enemyX, -50))
-            elif enemyType == "Charger":
-                enemies.append(Charger(enemyX, -50))
-            elif enemyType == "Blocker":
-                enemies.append(Blocker(enemyX, -50))
-            elif enemyType == "Combustion":
-               enemies.append(Combustion(enemyX, -50))
-            lastSpawnTime = currentTime
+    #Enemy & boss spawning & which type
+    if enemiesKilled >= 1 and not bossSpawned:
+        boss = BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
+        bosses.append(boss)
+        bossSpawned = True
+    elif currentTime - lastSpawnTime > enemySpawnDelay and (enemiesKilled < 1):
+        enemyX = random.randint(0, SCREEN_WIDTH - 50)
+        enemyType = random.choice(["Basic", "Shooter", "Charger", "Blocker", "Combustion"])    #add other enemies here
+        if enemyType == "Basic":
+            #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
+            enemies.append(Enemy(enemyX, -50))
+        elif enemyType == "Shooter":
+            enemies.append(Shooter(enemyX, -50))
+        elif enemyType == "Charger":
+            enemies.append(Charger(enemyX, -50))
+        elif enemyType == "Blocker":
+            enemies.append(Blocker(enemyX, -50))
+        elif enemyType == "Combustion":
+           enemies.append(Combustion(enemyX, -50))
+        lastSpawnTime = currentTime
 
     #Draws the player, bullets, enemies, and their bullets
     screen.fill((0,0,0))
@@ -483,9 +508,9 @@ def gameplay():
     for enemyBull in enemyBullets[:]:
         if not paused:    
             if isinstance(enemyBull, Laser):
-                enemyBull.update(currentTime)
+                enemyBull.update(currentTime, paused)
             else:
-                enemyBull.update()
+                enemyBull.update(paused)
         if getattr(enemyBull, "expired", False):
             enemyBullets.remove(enemyBull)
         if enemyBull.rect.top > SCREEN_HEIGHT or enemyBull.rect.bottom < 0 or enemyBull.rect.right < 0 or enemyBull.rect.left > SCREEN_WIDTH:
@@ -500,7 +525,7 @@ def gameplay():
             enemyBull.draw(screen)
     for boss in bosses:
         if boss.alive:
-            boss.update(currentTime)
+            boss.update(currentTime, paused)
             boss.draw(screen)
 
 #def drawMap():
