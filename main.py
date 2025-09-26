@@ -5,7 +5,8 @@ pygame.init()
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 860
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+gameScreen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Rogue Space Invaders")
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 74)
@@ -19,6 +20,7 @@ class Player:
         self.speed = speed
         self.damage = damage
         self.health = health
+        self.cash = 0
         #Charge Shot
         self.charging = False
         self.chargingStart = 0
@@ -78,11 +80,12 @@ class Player:
                     self.health = 0
                     self.alive = False
                     #Send to Game Over Screen
-    def draw(self, screen):
-        pygame.draw.rect(screen, (0, 255, 0), self.rect)
+    def draw(self, gameScreen):
+        pygame.draw.rect(gameScreen, (0, 255, 0), self.rect)
 #endregion
 #Player code
 player = Player()
+currentLevel = 1
 
 #Bullet code
 bullet = []
@@ -126,8 +129,8 @@ class Bullet:
         self.rect.x += dx
         self.rect.y += dy
 
-    def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+    def draw(self, gameScreen):
+        pygame.draw.rect(gameScreen, self.color, self.rect)
 class Laser(Bullet):
     def __init__(self, gunRect, width = 10, height = SCREEN_HEIGHT, speed = 1, damage = 2, color=(25,255,0), direction = "N", duration = 1000):
         self.gunRect = gunRect
@@ -154,8 +157,8 @@ class Laser(Bullet):
         self.updatePosition()
         if currentTime - self.spawnTime >= self.duration:
             self.expired = True
-    def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+    def draw(self, gameScreen):
+        pygame.draw.rect(gameScreen, self.color, self.rect)
 #endregion
 #Enemy code
 enemies = []
@@ -179,8 +182,8 @@ class Enemy:
         if paused:
             return
         self.rect.y += self.speed
-    def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+    def draw(self, gameScreen):
+        pygame.draw.rect(gameScreen, self.color, self.rect)
 class Shooter(Enemy):
     def __init__(self, x, y, width = 60 , height = 30, health = 1, speed = enemySPD + 2):
         super().__init__(x, y, width, height, health, speed, color = (255,0,255))
@@ -296,8 +299,8 @@ class Boss(Enemy):
             elif self.rect.left <= 0:
                 self.rect.left = 0
                 self.direction = 1
-    def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+    def draw(self, gameScreen):
+        pygame.draw.rect(gameScreen, self.color, self.rect)
 
 class BossShooterBlockerFusion(Boss):
     def __init__(self, x, y):
@@ -339,14 +342,14 @@ class BossShooterBlockerFusion(Boss):
                     laser = Laser(self.guns[gun], width = 10, height = SCREEN_HEIGHT, damage = self.damage, direction="S", duration=self.laserDuration)
                     enemyBullets.append(laser)
 
-    def draw(self, screen):
-        super().draw(screen)
+    def draw(self, gameScreen):
+        super().draw(gameScreen)
 
         for gun, health in self.gunHealth.items():
             if health > 0:
                 gunX = self.rect.x + self.gunOffset[gun][0]
                 gunY = self.rect.y + self.gunOffset[gun][1]
-                pygame.draw.rect(screen, (0,0, 255), (gunX, gunY, 30, 100))
+                pygame.draw.rect(gameScreen, (0,0, 255), (gunX, gunY, 30, 100))
                 
     def takeDamage(self, amount, gun = None, charged=False):
         if charged:
@@ -360,6 +363,19 @@ class BossShooterBlockerFusion(Boss):
             self.alive = False
 #endregion
 
+#region HUD
+def drawLeftHUD(gameScreen, font, health, cash, level):
+    hudRect = pygame.Rect(10, gameScreen.get_height() -80, 200, 70)
+    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
+    textHealth = font.render(f"HP: {health}", True, (255, 0, 0))
+    textCash = font.render(f"Cash: {cash}", True, (255, 255, 0))
+    textLevel = font.render(f"Level: {level}", True, (0, 255, 0))
+    gameScreen.blit(textHealth, (hudRect.x + 10, hudRect.y + 10))
+    gameScreen.blit(textCash, (hudRect.x + 10, hudRect.y + 30))
+    gameScreen.blit(textLevel, (hudRect.x + 10, hudRect.y + 50))
+#endregion
+
 #Game States: MainMenu Gameplay, How To Play, Map
 state = "MainMenu"  #Where the game starts
 selectedOption = 0
@@ -367,23 +383,23 @@ menu_options = ["Start Game", "How To Play", "Quit"]
 paused = False
 
 def drawMainMenu(selected):
-    screen.fill((0,0,0))
+    gameScreen.fill((0,0,0))
 
     #Title Screen
     title = font.render("Rogue Space Invaders", True, (255,255,255))
-    screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+    gameScreen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
 
     #Options
     for i, option in enumerate(menu_options):
         color = (255, 255, 0) if i == selected else (255, 255, 255)
         text = smallFont.render(option, True, color)
-        screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250 + i * 60))
+        gameScreen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250 + i * 60))
 
 def drawHowToPlay():
-    screen.fill((0,0,0))
+    gameScreen.fill((0,0,0))
 
     title = font.render("How To Play", True, (255,255,255))
-    screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+    gameScreen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
     controls = ["Move Left/Right: A / D", "Focus Movement: Hold RCtrl", "Shoot: W",
                 "Charge Shot: Hold W & RShift, Release RShift when charged",
                 "Pause: Esc"]
@@ -395,15 +411,15 @@ def drawHowToPlay():
     y = 150
     for line in controls:
         text = smallFont.render(line, True, (200,200,200))
-        screen.blit(text, (50, y))
+        gameScreen.blit(text, (50, y))
         y += 50
     for name, color, desc in enemyInfo:
-        pygame.draw.rect(screen, color, (50, y, 40, 40))
+        pygame.draw.rect(gameScreen, color, (50, y, 40, 40))
         text = smallFont.render(f"{name} - {desc}", True, (255,255,255))
-        screen.blit(text, (100, y + 5))
+        gameScreen.blit(text, (100, y + 5))
         y += 60
     backText = smallFont.render("Press ESC to return", True, (255, 255, 0))
-    screen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 100))
+    gameScreen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 100))
 
 #def drawPause():
         
@@ -477,11 +493,11 @@ def gameplay():
                 if bulletRemoved and shot in bullet:
                     bullet.remove(shot)
     #Enemy & boss spawning & which type
-    if enemiesKilled >= 1 and not bossSpawned:
+    if enemiesKilled >= 1 and not bossSpawned and not paused:
         boss = BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
         bosses.append(boss)
         bossSpawned = True
-    elif currentTime - lastSpawnTime > enemySpawnDelay and (enemiesKilled < 1):
+    elif currentTime - lastSpawnTime > enemySpawnDelay and (enemiesKilled < 1) and not paused:
         enemyX = random.randint(0, SCREEN_WIDTH - 50)
         enemyType = random.choice(["Basic", "Shooter", "Charger", "Blocker", "Combustion"])    #add other enemies here
         if enemyType == "Basic":
@@ -498,13 +514,13 @@ def gameplay():
         lastSpawnTime = currentTime
 
     #Draws the player, bullets, enemies, and their bullets
-    screen.fill((0,0,0))
+    gameScreen.fill((0,0,0))
     if player.alive:
-        player.draw(screen)
+        player.draw(gameScreen)
     for shot in bullet:
-        shot.draw(screen)
+        shot.draw(gameScreen)
     for enemy in enemies:
-        enemy.draw(screen)
+        enemy.draw(gameScreen)
     for enemyBull in enemyBullets[:]:
         if not paused:    
             if isinstance(enemyBull, Laser):
@@ -522,12 +538,12 @@ def gameplay():
                 player.takeDamage(enemyBull.damage, currentTime)
                 enemyBullets.remove(enemyBull)
         else:
-            enemyBull.draw(screen)
+            enemyBull.draw(gameScreen)
     for boss in bosses:
         if boss.alive:
             boss.update(currentTime, paused)
-            boss.draw(screen)
-
+            boss.draw(gameScreen)
+    drawLeftHUD(gameScreen, font, player.health, player.cash, currentLevel)
 #def drawMap():
 
 
@@ -575,19 +591,29 @@ while run:
         barX = player.rect.x
         barY = player.rect.bottom + 10
 
-        pygame.draw.rect(screen, (80, 80, 80), (barX, barY, barWidth, barHeight))
-        pygame.draw.rect(screen, (0, 200, 255), (barX, barY, int(barWidth * progress), barHeight))
+        pygame.draw.rect(gameScreen, (80, 80, 80), (barX, barY, barWidth, barHeight))
+        pygame.draw.rect(gameScreen, (0, 200, 255), (barX, barY, int(barWidth * progress), barHeight))
     
     if state == "Gameplay" and paused:
         pauseFont = pygame.font.Font(None, 120)
         pauseText = pauseFont.render("PAUSED", True, (255,255,255))
         textRect = pauseText.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-        screen.blit(pauseText, textRect)
+        gameScreen.blit(pauseText, textRect)
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.SRCALPHA)
         overlay.fill((0,0,0,150))
-        screen.blit(overlay, (0,0))
-        screen.blit(pauseText, textRect)
+        gameScreen.blit(overlay, (0,0))
+        gameScreen.blit(pauseText, textRect)
 
-    pygame.display.update()
+    windowWidth, windowHeight = screen.get_size()
+    scale = min(windowWidth / SCREEN_WIDTH, windowHeight / SCREEN_HEIGHT)
+    scaledWidth = int(SCREEN_WIDTH * scale)
+    scaledHeight = int(SCREEN_HEIGHT * scale)
+    scaledSurface = pygame.transform.scale(gameScreen, (scaledWidth, scaledHeight))
+    xOffset = (windowWidth - scaledWidth) // 2
+    yOffset = (windowHeight - scaledHeight) // 2
+    screen.fill((255,255,255))
+    screen.blit(scaledSurface, (xOffset, yOffset))
+
+    pygame.display.flip()
 
 pygame.quit()

@@ -49,3 +49,7 @@ but does take damage from getting hit on the guns.
 9/25/25
 Adding pause as a parameter for everything fixed the main issue with many things moving and
 updating when it shouldn't be possible.
+
+9/26/25
+Added a HUD that shows the Health, Cash, Parts, Weapons, and current level. Screen can now be
+resized to fit a screen. 
