@@ -21,6 +21,7 @@ class Player:
         self.damage = damage
         self.health = health
         self.cash = 0
+        self.currentWeapon = 0  #Bullet is weapon 0
         #Charge Shot
         self.charging = False
         self.chargingStart = 0
@@ -83,9 +84,11 @@ class Player:
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, (0, 255, 0), self.rect)
 #endregion
+
 #Player code
 player = Player()
 currentLevel = 1
+gameOverTime = None
 
 #Bullet code
 bullet = []
@@ -103,6 +106,7 @@ chargedShotSPD = 30
 charging = False
 chargingStart = 0
 maxChargeTime = 1000
+
 #region Bullet Classes
 class Bullet:
     def __init__(self, x, y, width, height, speed, damage, color, direction = "N", charged = False):
@@ -160,6 +164,7 @@ class Laser(Bullet):
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, self.color, self.rect)
 #endregion
+
 #Enemy code
 enemies = []
 enemyBullets = []
@@ -363,23 +368,135 @@ class BossShooterBlockerFusion(Boss):
             self.alive = False
 #endregion
 
+#Map Control
+mapCreated = False
+nodePositions = {}
 #region HUD
 def drawLeftHUD(gameScreen, font, health, cash, level):
-    hudRect = pygame.Rect(10, gameScreen.get_height() -80, 200, 70)
+    hudRect = pygame.Rect(0, gameScreen.get_height() - 160, 200, 160)
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
     pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
     textHealth = font.render(f"HP: {health}", True, (255, 0, 0))
     textCash = font.render(f"Cash: {cash}", True, (255, 255, 0))
     textLevel = font.render(f"Level: {level}", True, (0, 255, 0))
-    gameScreen.blit(textHealth, (hudRect.x + 10, hudRect.y + 10))
-    gameScreen.blit(textCash, (hudRect.x + 10, hudRect.y + 30))
-    gameScreen.blit(textLevel, (hudRect.x + 10, hudRect.y + 50))
+    gameScreen.blit(textHealth, (hudRect.x + 5, hudRect.y + 10))
+    gameScreen.blit(textCash, (hudRect.x + 5, hudRect.y + 60))
+    gameScreen.blit(textLevel, (hudRect.x + 5, hudRect.y + 110))
+def drawMiddleHUD(screen, font):
+    hudRect = pygame.Rect(200, screen.get_height() - 160, 960, 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
+    text = font.render("Parts: [not implemented]", True, (200, 200, 200))
+    screen.blit(text, (hudRect.x + 10, hudRect.y + 30))
+def drawRightHUD(screen, font, weapons, currentWeaponIndex):
+    hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
+    for i, weapon in enumerate(weapons):
+        color = (0, 255, 0) if i == currentWeaponIndex else (200,200,200)
+        text = font.render(weapon, True, color)
+        screen.blit(text, (hudRect.right - text.get_width() - 5, hudRect.y + 10 + i * 50))
+#endregion
+
+
+#region Map Logic
+#
+#       Boss
+#         |
+#        L13
+#      /     \
+#    L11     L12
+#   /  \    /   \
+#  L7  L8  L9   L10
+#   \   |   |   /
+#    L3 L4 L5 L6
+#     \ |   | /
+#      L1   L2
+#       \   /
+#       Start
+MAP_GRAPH = {"Start": ["L1", "L2"],
+             "L1":    ["L3", "L4"],
+             "L2":    ["L5", "L5"],
+             "L3":    ["L7"],
+             "L4":    ["L8"],
+             "L5":    ["L9"],
+             "L6":    ["L10"],
+             "L7":    ["L11"],
+             "L8":    ["L11"],
+             "L9":    ["L12"],
+             "L10":   ["L12"],
+             "L11":   ["L13"],
+             "L12":   ["L13"],
+             "L13":   ["Boss"],
+             "Boss":  []
+
+}
+currentLevel = "Start"
+
+def getNextLevel(node):
+    return MAP_GRAPH.get(node, [])
+def generateLevel():
+    global LEVEL_DATA
+    LEVEL_DATA = {}
+    for node in MAP_GRAPH.keys():
+        if node == "Start":
+            LEVEL_DATA[node] = {"difficulty": 0, "reward": None}
+        elif node == "Boss":
+            LEVEL_DATA[node] = {"difficult": 10, "reward": "BOSS_PART"}
+        else:
+            LEVEL_DATA[node] = {
+                "difficulty": 4,
+                "reward": random.choice(["part", "heal", "shop"])
+            }
+def loadLevel(node):
+    levelInfo = LEVEL_DATA.get(node, {})
+    print(f"Level {node}. Difficulty {levelInfo.get('difficulty')}. Reward: {levelInfo.get('reward')}")
+def nextLevel(newNode):
+    global currentNode
+    if newNode in getNextLevel(currentNode):
+        currentNode = newNode
+        loadLevel(currentNode)
+def setupMapPositions(screenWidth):
+    global nodePositions
+    center = screenWidth // 2
+    nodePositions ={
+        "Start": (center, 700),
+        "L1":    (center - 100, 600),
+        "L2":    (center + 100, 600),
+        "L3":    (center - 180, 500),
+        "L4":    (center - 60, 500),
+        "L5":    (center + 60, 500),
+        "L6":    (center + 180, 500),
+        "L7":    (center - 240, 400),
+        "L8":    (center - 120, 400),
+        "L9":    (center + 120, 400),
+        "L10":   (center + 240, 400),
+        "L11":   (center - 150, 300),
+        "L12":   (center + 150, 300),
+        "L13":   (center, 200),
+        "Boss":  (center, 100)
+    }
+#endregion
+
+#region Resetting Game
+def reset():
+    global player, bullet, chargedShot, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime
+    player = Player()
+    bullet = []
+    chargedShot = []
+    enemies = []
+    enemyBullets = []
+    enemiesKilled = 0
+    bosses = []
+    mapCreated = False
+    paused = False
+    gameOverTime = None
 #endregion
 
 #Game States: MainMenu Gameplay, How To Play, Map
 state = "MainMenu"  #Where the game starts
 selectedOption = 0
-menu_options = ["Start Game", "How To Play", "Quit"]
+menuOptions = ["Start Game", "How To Play", "Quit"]
 paused = False
 
 def drawMainMenu(selected):
@@ -390,7 +507,7 @@ def drawMainMenu(selected):
     gameScreen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
 
     #Options
-    for i, option in enumerate(menu_options):
+    for i, option in enumerate(menuOptions):
         color = (255, 255, 0) if i == selected else (255, 255, 255)
         text = smallFont.render(option, True, color)
         gameScreen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250 + i * 60))
@@ -420,8 +537,6 @@ def drawHowToPlay():
         y += 60
     backText = smallFont.render("Press ESC to return", True, (255, 255, 0))
     gameScreen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 100))
-
-#def drawPause():
         
 bossSpawned = False
 enemiesKilled = 0
@@ -544,8 +659,42 @@ def gameplay():
             boss.update(currentTime, paused)
             boss.draw(gameScreen)
     drawLeftHUD(gameScreen, font, player.health, player.cash, currentLevel)
-#def drawMap():
+    drawMiddleHUD(gameScreen, font)
+    drawRightHUD(gameScreen, font, ["Bullet", "Laser"], player.currentWeapon)
+def drawMap(screen, font):
+    global mapCreated 
+    
+    #Clear the screen when loaded
+    gameScreen.fill((0,0,0))
 
+    #Creates the levels first time created
+    if not mapCreated:
+        generateLevel()
+        setupMapPositions(screen.get_width())
+        mapCreated = True
+
+    #Connects nodes together
+    for node, connections in MAP_GRAPH.items():
+        for next in connections:
+            pygame.draw.line(screen, (200,200,200), nodePositions[node], nodePositions[next], 2)
+    
+    #Gives nodes their info
+    for node, (x, y) in nodePositions.items():
+        levelInfo = LEVEL_DATA[node]
+        color = (0, 255, 0) if node == "Start" else (255, 0, 0) if node == "Boss" else (100, 100, 255)
+        pygame.draw.circle(screen, color, (x, y), 20)
+        pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, 2)
+
+        # Text inside node
+        text = smallFont.render(node, True, (255, 255, 255))
+        text_rect = text.get_rect(center=(x, y))
+        screen.blit(text, text_rect)
+
+        # Difficulty + reward below node
+        if node not in ("Start", "Boss"):
+            detail = smallFont.render(f"D{levelInfo['difficulty']} {levelInfo['reward']}", True, (200, 200, 200))
+            detail_rect = detail.get_rect(center=(x, y + 30))
+            screen.blit(detail, detail_rect)
 
 #--Main Loop--#
 run = True
@@ -559,28 +708,55 @@ while run:
         if state == "MainMenu":
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
-                    selectedOption = (selectedOption - 1) % len(menu_options)
+                    selectedOption = (selectedOption - 1) % len(menuOptions)
                 elif event.key == pygame.K_s:
-                    selectedOption = (selectedOption + 1) % len(menu_options)
+                    selectedOption = (selectedOption + 1) % len(menuOptions)
                 elif event.key == pygame.K_RETURN:
                     if selectedOption == 0:
-                        state = "Gameplay"
+                        reset()
+                        state = "Gameplay"      #Change for testing
                     elif selectedOption == 1:
                         state = "How To Play"
                     elif selectedOption == 2:
                         run = False
         elif state == "Gameplay":
+            if not player.alive:
+                state = "GameOver"
+                gameOverTime = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 paused = not paused
+        elif state == "GameOver":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                state = "MainMenu"
+                gameOverTime = None
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             state = "MainMenu"
+    
+    #Draw screens
     if state == "MainMenu":
         drawMainMenu(selectedOption)
     elif state == "Gameplay":
         gameplay()
     elif state == "How To Play":
         drawHowToPlay()
+    elif state == "Map":
+        drawMap(gameScreen, font)
+    elif state == "GameOver":
+        gameOverFont = pygame.font.Font(None, 120)
+        gameOverText = gameOverFont.render("GAME OVER", True, (255,255,255))
+        textRect = gameOverText.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+        gameScreen.blit(gameOverText, textRect)
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.SRCALPHA)
+        overlay.fill((0,0,0,150))
+        gameScreen.blit(overlay, (0,0))
+        gameScreen.blit(gameOverText, textRect)
+        pygame.display.flip()
+        if pygame.time.get_ticks() - gameOverTime > 3000:
+            reset()
+            state = "MainMenu"
+            pygame.display.flip()
 
+    #Charge Shot Charging Code
     if player.charging:
         if not paused:
             chargeDuration = currentTime - player.chargingStart
@@ -594,6 +770,7 @@ while run:
         pygame.draw.rect(gameScreen, (80, 80, 80), (barX, barY, barWidth, barHeight))
         pygame.draw.rect(gameScreen, (0, 200, 255), (barX, barY, int(barWidth * progress), barHeight))
     
+    #Paused Game Code
     if state == "Gameplay" and paused:
         pauseFont = pygame.font.Font(None, 120)
         pauseText = pauseFont.render("PAUSED", True, (255,255,255))
