@@ -22,15 +22,26 @@ bullet = []
 gamer = player.Player(bulletList = bullet)
 currentLevel = 1
 gameOverTime = None
+gameStartTime = pygame.time.get_ticks()
+pauseStartTime = None
+pausedTimeAccumulated = 0
 
 #Enemy code
 enemies = []
 enemyBullets = []
 bosses = []
+bossSpawned = False
+enemiesKilled = 0
 
 #Map Control
 mapCreated = False
 nodePositions = {}
+
+#Game Time
+def getGameTime():
+    if paused and pauseStartTime is not None:
+        return pauseStartTime - pausedTimeAccumulated
+    return pygame.time.get_ticks() - pausedTimeAccumulated
 #region HUD
 def drawLeftHUD(gameScreen, font, health, cash, level):
     hudRect = pygame.Rect(0, gameScreen.get_height() - 160, 200, 160)
@@ -197,15 +208,13 @@ def drawHowToPlay():
     backText = smallFont.render("Press ESC to return", True, (255, 255, 0))
     gameScreen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 100))
         
-bossSpawned = False
-enemiesKilled = 0
 def gameplay():
     global currentTime
     global enemiesKilled
     global bossSpawned
 
     key = pygame.key.get_pressed()
-    currentTime = pygame.time.get_ticks()
+    currentTime = getGameTime()
     
     #Only update if game isn't paused.
     gamer.update(key, currentTime, paused)
@@ -378,7 +387,13 @@ while run:
                 state = "GameOver"
                 gameOverTime = pygame.time.get_ticks()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                paused = not paused
+                if not paused:
+                    paused = True
+                    pauseStartTime = pygame.time.get_ticks()
+                else:
+                    paused = False
+                    pausedTimeAccumulated += pygame.time.get_ticks() - pauseStartTime
+                    pauseStartTime = None
         elif state == "GameOver":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 state = "MainMenu"
@@ -435,6 +450,7 @@ while run:
         gameScreen.blit(overlay, (0,0))
         gameScreen.blit(pauseText, textRect)
 
+    #Resizing Window
     windowWidth, windowHeight = screen.get_size()
     scale = min(windowWidth / SCREEN_WIDTH, windowHeight / SCREEN_HEIGHT)
     scaledWidth = int(SCREEN_WIDTH * scale)

@@ -62,4 +62,6 @@ Made a working definition for how the map is created and visually looks. Added t
 the player dies and a game over screen. The game also now fully resets when a new game is started.
 
 10/2/25
-Separated most logic for game into multiple files. Main.py is now easier to read.
+Separated most logic for game into multiple files. Main.py is now easier to read. Pause button
+now freezes time correctly for the Charged Shot, enemy spawning, and laser despawn time. Was fixed
+by subtracting the time the game was paused from the game's current time.
