@@ -60,3 +60,6 @@ creating logic for map using a Node graph.
 9/28/25
 Made a working definition for how the map is created and visually looks. Added the check for when
 the player dies and a game over screen. The game also now fully resets when a new game is started.
+
+10/2/25
+Separated most logic for game into multiple files. Main.py is now easier to read.
