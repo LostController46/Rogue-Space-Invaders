@@ -65,3 +65,8 @@ the player dies and a game over screen. The game also now fully resets when a ne
 Separated most logic for game into multiple files. Main.py is now easier to read. Pause button
 now freezes time correctly for the Charged Shot, enemy spawning, and laser despawn time. Was fixed
 by subtracting the time the game was paused from the game's current time.
+
+10/3/25
+Added functionality to the map. Can now traverse throughout the map and now displays actual useful
+information about the level. Map was also resized to fit all information. Level dictates what
+enemies can spawn and how many should spawn.

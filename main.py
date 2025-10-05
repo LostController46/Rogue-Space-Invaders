@@ -14,6 +14,8 @@ pygame.display.set_caption("Rogue Space Invaders")
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 74)
 smallFont = pygame.font.Font(None, 50)
+enemyLeftFont = pygame.font.Font(None, 32)
+levelFont = pygame.font.Font(None, 20)
 
 #Bullet code
 bullet = []
@@ -32,6 +34,8 @@ enemyBullets = []
 bosses = []
 bossSpawned = False
 enemiesKilled = 0
+enemiesLeft = 0
+enemiesDecided = False
 
 #Map Control
 mapCreated = False
@@ -43,7 +47,7 @@ def getGameTime():
         return pauseStartTime - pausedTimeAccumulated
     return pygame.time.get_ticks() - pausedTimeAccumulated
 #region HUD
-def drawLeftHUD(gameScreen, font, health, cash, level):
+def drawLeftHUD(gameScreen, font, health, cash, level, enemiesLeft, enemiesKilled):
     hudRect = pygame.Rect(0, gameScreen.get_height() - 160, 200, 160)
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
     pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
@@ -53,6 +57,13 @@ def drawLeftHUD(gameScreen, font, health, cash, level):
     gameScreen.blit(textHealth, (hudRect.x + 5, hudRect.y + 10))
     gameScreen.blit(textCash, (hudRect.x + 5, hudRect.y + 60))
     gameScreen.blit(textLevel, (hudRect.x + 5, hudRect.y + 110))
+    #Enemy HUD
+    enemiesRemain = enemiesLeft - enemiesKilled
+    enemyHudRect = pygame.Rect(0, 0, 200, 50)
+    pygame.draw.rect(gameScreen, (50, 50, 50), enemyHudRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), enemyHudRect, 2)
+    textEnemiesLeft = enemyLeftFont.render(f"Enemies Left: {enemiesRemain}", True, (255, 255, 255))
+    gameScreen.blit(textEnemiesLeft, (enemyHudRect.x + 5, enemyHudRect.y + 10))
 def drawMiddleHUD(screen, font):
     hudRect = pygame.Rect(200, screen.get_height() - 160, 960, 160)
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
@@ -87,7 +98,7 @@ def drawRightHUD(screen, font, weapons, currentWeaponIndex):
 #       Start
 MAP_GRAPH = {"Start": ["L1", "L2"],
              "L1":    ["L3", "L4"],
-             "L2":    ["L5", "L5"],
+             "L2":    ["L5", "L6"],
              "L3":    ["L7"],
              "L4":    ["L8"],
              "L5":    ["L9"],
@@ -109,23 +120,33 @@ def getNextLevel(node):
 def generateLevel():
     global LEVEL_DATA
     LEVEL_DATA = {}
+    HORDE_SIZE = ["Small", "Medium", "Large", "Massive"]
+    ENEMY_TYPES =["Basic", "Shooter", "Blocker", "Charger", "Combustion"]
+    REWARDS = ["Part", "Heal", "Shop"]
     for node in MAP_GRAPH.keys():
         if node == "Start":
-            LEVEL_DATA[node] = {"difficulty": 0, "reward": None}
+            LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Reward": None}
         elif node == "Boss":
-            LEVEL_DATA[node] = {"difficult": 10, "reward": "BOSS_PART"}
+            LEVEL_DATA[node] = {"Horde": "Massive", "enemies": ENEMY_TYPES, "reward": "BOSS_PART"}
         else:
+            #Prevents only Blockers from spawning
+            levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
+            if levelEnemies == ["Blocker"]:
+                levelEnemies.append("Shooter")
             LEVEL_DATA[node] = {
-                "difficulty": 4,
-                "reward": random.choice(["part", "heal", "shop"])
+                "Horde": random.choice(HORDE_SIZE),
+                "Enemies": levelEnemies,
+                "Rewards": random.choice(REWARDS)
             }
 def loadLevel(node):
     levelInfo = LEVEL_DATA.get(node, {})
-    print(f"Level {node}. Difficulty {levelInfo.get('difficulty')}. Reward: {levelInfo.get('reward')}")
+    print(f"Level {node}. Horde Size {levelInfo.get('Horde')}. Enemies {levelInfo.get('Enemies')}. Reward: {levelInfo.get('Rewards')}")
 def nextLevel(newNode):
     global currentNode
+    global selectedLevel
     if newNode in getNextLevel(currentNode):
         currentNode = newNode
+        selectedLevel = 0
         loadLevel(currentNode)
 def setupMapPositions(screenWidth):
     global nodePositions
@@ -134,14 +155,14 @@ def setupMapPositions(screenWidth):
         "Start": (center, 700),
         "L1":    (center - 100, 600),
         "L2":    (center + 100, 600),
-        "L3":    (center - 180, 500),
-        "L4":    (center - 60, 500),
-        "L5":    (center + 60, 500),
-        "L6":    (center + 180, 500),
-        "L7":    (center - 240, 400),
+        "L3":    (center - 350, 500),
+        "L4":    (center - 110, 500),
+        "L5":    (center + 110, 500),
+        "L6":    (center + 350, 500),
+        "L7":    (center - 330, 400),
         "L8":    (center - 120, 400),
         "L9":    (center + 120, 400),
-        "L10":   (center + 240, 400),
+        "L10":   (center + 330, 400),
         "L11":   (center - 150, 300),
         "L12":   (center + 150, 300),
         "L13":   (center, 200),
@@ -151,7 +172,7 @@ def setupMapPositions(screenWidth):
 
 #region Resetting Game
 def reset():
-    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime
+    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode
     bullet = []
     gamer = player.Player(bulletList = bullet)
     enemies = []
@@ -161,6 +182,15 @@ def reset():
     mapCreated = False
     paused = False
     gameOverTime = None
+    enemiesDecided = False
+    currentNode = "Start"
+def softReset():
+    global enemies, enemyBullets, enemiesKilled, bosses, enemiesDecided
+    enemies = []
+    enemyBullets = []
+    enemiesKilled = 0
+    bosses = []
+    enemiesDecided = False
 #endregion
 
 #Game States: MainMenu Gameplay, How To Play, Map
@@ -212,6 +242,24 @@ def gameplay():
     global currentTime
     global enemiesKilled
     global bossSpawned
+    global enemiesDecided
+    levelInfo = LEVEL_DATA[currentNode]
+    spawnWhat = levelInfo["Enemies"]
+    howLarge = levelInfo["Horde"]
+    rewardType = levelInfo["Rewards"]
+    global enemiesLeft
+    if howLarge == "Small" and not enemiesDecided:
+        enemiesDecided = True
+        enemiesLeft = random.randint(10, 15)
+    elif howLarge == "Medium" and not enemiesDecided:
+        enemiesDecided = True
+        enemiesLeft = random.randint(20, 25)
+    elif howLarge == "Large" and not enemiesDecided:
+        enemiesDecided = True
+        enemiesLeft = random.randint(30, 35)
+    elif howLarge == "Massive" and not enemiesDecided:
+        enemiesDecided = True
+        enemiesLeft = 45
 
     key = pygame.key.get_pressed()
     currentTime = getGameTime()
@@ -271,13 +319,13 @@ def gameplay():
                 if bulletRemoved and shot in bullet:
                     bullet.remove(shot)
     #Enemy & boss spawning & which type
-    if enemiesKilled >= 1 and not bossSpawned and not paused:
+    if enemiesKilled >= enemiesLeft and not bossSpawned and not paused and currentNode == "Boss":
         boss = attackers.BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
         bosses.append(boss)
         bossSpawned = True
-    elif currentTime - attackers.lastSpawnTime > attackers.enemySpawnDelay and (enemiesKilled < 1) and not paused:
+    elif currentTime - attackers.lastSpawnTime > attackers.enemySpawnDelay and (enemiesKilled < enemiesLeft) and not paused:
         enemyX = random.randint(0, SCREEN_WIDTH - 50)
-        enemyType = random.choice(["Basic", "Shooter", "Charger", "Blocker", "Combustion"])    #add other enemies here
+        enemyType = random.choice(spawnWhat)
         if enemyType == "Basic":
             #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
             enemies.append(attackers.Enemy(enemyX, -50))
@@ -321,10 +369,11 @@ def gameplay():
         if boss.alive:
             boss.update(currentTime, paused, enemyBullets)
             boss.draw(gameScreen)
-    drawLeftHUD(gameScreen, font, gamer.health, gamer.cash, currentLevel)
+    drawLeftHUD(gameScreen, font, gamer.health, gamer.cash, currentLevel, enemiesLeft, enemiesKilled)
     drawMiddleHUD(gameScreen, font)
     drawRightHUD(gameScreen, font, ["Bullet", "Laser"], gamer.currentWeapon)
-def drawMap(screen, font):
+
+def drawMap(screen):
     global mapCreated 
     
     #Clear the screen when loaded
@@ -341,27 +390,52 @@ def drawMap(screen, font):
         for next in connections:
             pygame.draw.line(screen, (200,200,200), nodePositions[node], nodePositions[next], 2)
     
+    nextNodes = getNextLevel(currentNode)
+
     #Gives nodes their info
     for node, (x, y) in nodePositions.items():
-        levelInfo = LEVEL_DATA[node]
-        color = (0, 255, 0) if node == "Start" else (255, 0, 0) if node == "Boss" else (100, 100, 255)
+        if node == "Start":
+            color = (0, 255, 0)
+        elif node == "Boss":
+            color = (255, 0, 0)
+        elif node == currentNode:
+            color = (0, 200, 0)
+        elif node in nextNodes:
+            color = (200, 200, 0)
+        else:
+            color = (100, 100, 255)
+        
         pygame.draw.circle(screen, color, (x, y), 20)
         pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, 2)
 
-        # Text inside node
-        text = smallFont.render(node, True, (255, 255, 255))
+        #Text inside node
+        text = levelFont.render(node, True, (255, 255, 255))
         text_rect = text.get_rect(center=(x, y))
         screen.blit(text, text_rect)
 
-        # Difficulty + reward below node
+        #Horde, Enemies, Rewards below node
         if node not in ("Start", "Boss"):
-            detail = smallFont.render(f"D{levelInfo['difficulty']} {levelInfo['reward']}", True, (200, 200, 200))
+            levelInfo = LEVEL_DATA[node]
+            enemies = levelInfo["Enemies"]
+            symbols = ""
+            if "Basic" in enemies: symbols += "B "
+            if "Shooter" in enemies: symbols += "S "
+            if "Charger" in enemies: symbols += "C "
+            if "Blocker" in enemies: symbols += "Bl "
+            if "Combustion" in enemies: symbols += "X "
+            detail = levelFont.render(f"{levelInfo['Horde']}, {symbols.strip()}, {levelInfo['Rewards']}", True, (255, 255, 0))
             detail_rect = detail.get_rect(center=(x, y + 30))
             screen.blit(detail, detail_rect)
+    if nextNodes:
+        selectedNode = nextNodes[selectedLevel]
+        pos = nodePositions[selectedNode]
+        pygame.draw.circle(screen, (255, 0, 0), pos, 26, 3)
 
 #--Main Loop--#
 run = True
 selectedOption = 0
+selectedLevel = 0
+currentNode = "Start"
 
 while run:
     dt = clock.tick(60)
@@ -377,7 +451,7 @@ while run:
                 elif event.key == pygame.K_RETURN:
                     if selectedOption == 0:
                         reset()
-                        state = "Gameplay"      #Change for testing
+                        state = "Map"      #Change for testing
                     elif selectedOption == 1:
                         state = "How To Play"
                     elif selectedOption == 2:
@@ -394,10 +468,24 @@ while run:
                     paused = False
                     pausedTimeAccumulated += pygame.time.get_ticks() - pauseStartTime
                     pauseStartTime = None
+            if enemiesKilled >= enemiesLeft:
+                softReset()
+                state = "Map"
         elif state == "GameOver":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 state = "MainMenu"
                 gameOverTime = None
+        elif state == "Map":
+            if event.type == pygame.KEYDOWN:
+                nextNodes = getNextLevel(currentNode)
+                if event.key == pygame.K_a and nextNodes:
+                    selectedLevel = (selectedLevel - 1) % len(nextNodes)
+                elif event.key == pygame.K_d and nextNodes:
+                    selectedLevel = (selectedLevel + 1) % len(nextNodes)
+                elif event.key == pygame.K_RETURN and nextNodes:
+                    nextNode = nextNodes[selectedLevel]
+                    nextLevel(nextNode)
+                    state = "Gameplay"
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             state = "MainMenu"
     
@@ -409,7 +497,7 @@ while run:
     elif state == "How To Play":
         drawHowToPlay()
     elif state == "Map":
-        drawMap(gameScreen, font)
+        drawMap(gameScreen)
     elif state == "GameOver":
         gameOverFont = pygame.font.Font(None, 120)
         gameOverText = gameOverFont.render("GAME OVER", True, (255,255,255))
