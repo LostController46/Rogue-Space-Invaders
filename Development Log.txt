@@ -70,3 +70,8 @@ by subtracting the time the game was paused from the game's current time.
 Added functionality to the map. Can now traverse throughout the map and now displays actual useful
 information about the level. Map was also resized to fit all information. Level dictates what
 enemies can spawn and how many should spawn.
+
+10/5/25
+Made it so enemies now added their worth to the players's cash on death. Tweaked text size of HUD.
+Also added sprites for the Player, Basic, Shooter, and Charger. Known bug is that the other enemies 
+are currently using the Basic enemy sprite. Will be fixed once the rest of the sprites are complete.

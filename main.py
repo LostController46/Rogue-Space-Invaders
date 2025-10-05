@@ -47,13 +47,13 @@ def getGameTime():
         return pauseStartTime - pausedTimeAccumulated
     return pygame.time.get_ticks() - pausedTimeAccumulated
 #region HUD
-def drawLeftHUD(gameScreen, font, health, cash, level, enemiesLeft, enemiesKilled):
+def drawLeftHUD(gameScreen, health, cash, level, enemiesLeft, enemiesKilled):
     hudRect = pygame.Rect(0, gameScreen.get_height() - 160, 200, 160)
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
     pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
-    textHealth = font.render(f"HP: {health}", True, (255, 0, 0))
-    textCash = font.render(f"Cash: {cash}", True, (255, 255, 0))
-    textLevel = font.render(f"Level: {level}", True, (0, 255, 0))
+    textHealth = smallFont.render(f"HP: {health}", True, (255, 0, 0))
+    textCash = smallFont.render(f"Cash: {cash}", True, (255, 255, 0))
+    textLevel = smallFont.render(f"Level: {level}", True, (0, 255, 0))
     gameScreen.blit(textHealth, (hudRect.x + 5, hudRect.y + 10))
     gameScreen.blit(textCash, (hudRect.x + 5, hudRect.y + 60))
     gameScreen.blit(textLevel, (hudRect.x + 5, hudRect.y + 110))
@@ -64,13 +64,13 @@ def drawLeftHUD(gameScreen, font, health, cash, level, enemiesLeft, enemiesKille
     pygame.draw.rect(gameScreen, (200, 200, 200), enemyHudRect, 2)
     textEnemiesLeft = enemyLeftFont.render(f"Enemies Left: {enemiesRemain}", True, (255, 255, 255))
     gameScreen.blit(textEnemiesLeft, (enemyHudRect.x + 5, enemyHudRect.y + 10))
-def drawMiddleHUD(screen, font):
+def drawMiddleHUD(screen):
     hudRect = pygame.Rect(200, screen.get_height() - 160, 960, 160)
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
     pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
     text = font.render("Parts: [not implemented]", True, (200, 200, 200))
     screen.blit(text, (hudRect.x + 10, hudRect.y + 30))
-def drawRightHUD(screen, font, weapons, currentWeaponIndex):
+def drawRightHUD(screen, weapons, currentWeaponIndex):
     hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
     pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
@@ -113,7 +113,6 @@ MAP_GRAPH = {"Start": ["L1", "L2"],
              "Boss":  []
 
 }
-currentLevel = "Start"
 
 def getNextLevel(node):
     return MAP_GRAPH.get(node, [])
@@ -301,6 +300,7 @@ def gameplay():
                 if enemy.health <= 0:
                     if isinstance(enemy, attackers.Combustion):
                         enemy.onDeath(enemyBullets)
+                    gamer.cash += enemy.worth
                     enemies.remove(enemy)
                     enemiesKilled += 1
                 break
@@ -369,9 +369,9 @@ def gameplay():
         if boss.alive:
             boss.update(currentTime, paused, enemyBullets)
             boss.draw(gameScreen)
-    drawLeftHUD(gameScreen, font, gamer.health, gamer.cash, currentLevel, enemiesLeft, enemiesKilled)
-    drawMiddleHUD(gameScreen, font)
-    drawRightHUD(gameScreen, font, ["Bullet", "Laser"], gamer.currentWeapon)
+    drawLeftHUD(gameScreen, gamer.health, gamer.cash, currentLevel, enemiesLeft, enemiesKilled)
+    drawMiddleHUD(gameScreen)
+    drawRightHUD(gameScreen, ["Bullet", "Laser"], gamer.currentWeapon)
 
 def drawMap(screen):
     global mapCreated 

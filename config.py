@@ -25,3 +25,5 @@ enemyDelay = 1000
 enemySpawnDelay = 2000
 lastSpawnTime = 0
 lastEnemyShotTime = 0
+enemyWorth = 1
+bossWorth = 10

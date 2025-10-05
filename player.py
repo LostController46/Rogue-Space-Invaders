@@ -2,9 +2,12 @@ import pygame
 import config
 import bullets
 
+PLAYER_IMG = pygame.image.load("images/player.png")
+
 class Player():
-    def __init__(self, x = 640, y = 630, width = 50, height = 50, health = 20, speed = 15, damage = 1, bulletList = []):
-        self.rect = pygame.Rect((x, y, width, height))
+    def __init__(self, x = 640, y = 630, health = 20, speed = 15, damage = 1, bulletList = []):
+        self.image = pygame.transform.scale(PLAYER_IMG, (50, 50))
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.speed = speed
         self.damage = damage
         self.health = health
@@ -74,4 +77,4 @@ class Player():
                     self.alive = False
                     #Send to Game Over Screen
     def draw(self, gameScreen):
-        pygame.draw.rect(gameScreen, (0, 255, 0), self.rect)
+        gameScreen.blit(self.image, self.rect)

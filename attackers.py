@@ -1,8 +1,11 @@
 import pygame
 import random
 import config
-import player
 import bullets
+
+BASIC_IMG = pygame.image.load("images/Basic.png")
+SHOOTER_IMG = pygame.image.load("images/Shooter.png")
+CHARGER_IMG = pygame.image.load("images/Charger.png")
 
 enemyHP = config.enemyHP
 enemySPD = config.enemySPD
@@ -10,23 +13,29 @@ enemyDelay = config.enemyDelay
 enemySpawnDelay = config.enemySpawnDelay
 lastSpawnTime = config.lastSpawnTime
 lastEnemyShotTime = config.lastEnemyShotTime
+enemyWorth = config.enemyWorth
+bossWorth = config.bossWorth
 
 class Enemy:
-    def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1):
-        self.rect = pygame.Rect(x, y, width, height)
+    def __init__(self, x, y, width = 50 , height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1):
+        self.image = pygame.transform.scale(BASIC_IMG, (width, height))
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.speed = speed
         self.color = color
         self.health = health
         self.damage = damage
+        self.worth = enemyWorth
     def update(self, paused):
         if paused:
             return
         self.rect.y += self.speed
     def draw(self, gameScreen):
-        pygame.draw.rect(gameScreen, self.color, self.rect)
+        gameScreen.blit(self.image, self.rect)
 class Shooter(Enemy):
     def __init__(self, x, y, width = 60 , height = 30, health = 1, speed = enemySPD + 2):
         super().__init__(x, y, width, height, health, speed, color = (255,0,255))
+        self.image = pygame.transform.scale(SHOOTER_IMG, (width, height))
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.patrolY = 100 + random.randint(-20, 20)
         self.movingDown = True
         self.direction = 1 #-1 = Left/1 = Right
@@ -59,6 +68,8 @@ class Shooter(Enemy):
 class Charger(Enemy):
     def __init__(self, x, y, width = 40, height = 50, health = enemyHP + 1, speed = enemySPD + 4):
         super().__init__(x, y, width, height, health, speed, color = (255,165,0))
+        self.image = pygame.transform.scale(CHARGER_IMG, (width, height))
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.damage = 2
     def update(self, player, paused):
         if paused:
@@ -123,6 +134,7 @@ class Boss(Enemy):
         self.patrolY = 100
         self.movingDown = True
         self.alive = True
+        self.worth = bossWorth
     def update(self, paused):
         if paused:
             return
