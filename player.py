@@ -5,27 +5,79 @@ import bullets
 PLAYER_IMG = pygame.image.load("images/player.png")
 
 class Player():
-    def __init__(self, x = 640, y = 630, health = 20, speed = 15, damage = 1, bulletList = []):
+    def __init__(self, x = 640, y = 700, health = 20, speed = 15, damage = 1, bulletList = []):
         self.image = pygame.transform.scale(PLAYER_IMG, (50, 50))
         self.rect = self.image.get_rect(topleft=(x,y))
-        self.speed = speed
-        self.damage = damage
-        self.health = health
-        self.cash = 0
-        self.currentWeapon = 0  #Bullet is weapon 0
-        self.bulletList = bulletList
-        #Charge Shot
-        self.charging = False
-        self.chargingStart = 0
-        self.lastShotTime = 0
-        self.shotDelay = 300
+        self.baseStats = {
+            "defenses": 
+            {
+                "maxHealth": health,               
+                "reduction": 0,                       #Reduces damage taken
+                "immuneFrames": 1000,                 #The higher it is the more immunity frames
+                "regain": 0,                          #Regain health at the start of a level
+                "extraLife": 0,                       #Survive death once
+            },
+            "combat" : 
+            {
+                "damage": damage,
+                "chargeShotDamage" : damage * 2,  
+                "shotDelay": 300,                     #The lower it is the faster the firing speed
+                "chargeDelay": 300,                   #The lower it is the faster the charge
+                "exploit": 0,                         #Increases damage enemies take
+            },
+            "extra": 
+            {
+                "speed": speed,
+                "luck": 0,                            #Increases chances for rarer parts
+            },
+            "weaknesses":                           #Increases damage against this type of enemy
+            {
+                "basicWeak": False,                   
+                "shooterWeak": False,
+                "chargerWeak": False,
+                "blockerWeak": False,
+                "combustionWeak": False,
+                "bossWeak": False
+}
+}
         #Health & Immunity Frames
+        self.maxHealth = health
+        self.currentHealth = health
+        self.reduction = 0
+        self.immuneFrames = 1000
+        self.immuneTime = 0
+        self.regain = 0
         self.alive = True
         self.immune = False
-        self.immuneTime = 0
-        self.immuneFrames = 1000
+        self.extraLife = 0
+        #Damage Stats
+        self.damage = damage
+        self.chargeShotDamage = damage * 2
+        #Extra Stats
+        self.speed = speed
+        self.luck = 0
+        self.cash = 0
+        self.parts = []
+        #Exploit Enemy Weaknesses
+        self.basicWeak = False
+        self.shooterWeak = False
+        self.chargerWeak = False
+        self.blockerWeak = False
+        self.combustionWeak = False
+        self.bossWeak = False
+        #Bullet & Weapons
+        self.lastShotTime = 0
+        self.shotDelay = 300
+        self.chargeDelay = 300
+        self.charging = False
+        self.chargingStart = 0
+        self.currentWeapon = 0  #Bullet is weapon 0
+        self.bulletList = bulletList
         #Currently Paused
         self.pause = False
+        #Upgrades
+        self.partAdditions = 0
+        self.partMulti = 0.0
 
     def update(self, key, currentTime, paused):
         #Movement for player
@@ -42,7 +94,7 @@ class Player():
             self.rect.x += self.speed
         #Action for shooting
         #Charged Shot
-        if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - self.lastShotTime >= self.shotDelay:
+        if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - self.lastShotTime >= self.chargeDelay:
             if not self.charging:
                 self.charging = True
                 self.chargingStart = currentTime
@@ -54,7 +106,7 @@ class Player():
             chargedShotY = self.rect.top
             if fullyCharged:
                 self.bulletList.append(bullets.Bullet(chargedShotX, chargedShotY, bullets.bulletWidth, bullets.bulletHeight, 
-                                    bullets.chargedShotSPD, bullets.chargedShotATK, color=(235, 180, 52), 
+                                    bullets.chargedShotSPD, self.chargeShotDamage, color=(235, 180, 52), 
                                     direction = "N", charged=True))
                 self.lastShotTime = currentTime
         #Normal shot
@@ -76,5 +128,34 @@ class Player():
                     self.health = 0
                     self.alive = False
                     #Send to Game Over Screen
+    def partCollected(self, part):
+        self.parts.append(part)
+        self.updateStats()
+    def updateStats(self):
+        base = self.baseStats
+        #Reset all stats (can probably loop this)
+        self.health = base["defenses"]["health"]
+        self.reduction = base["defenses"]["reduction"]
+        self.immuneFrames = base["defenses"]["immuneFrames"]
+        self.regain = base["defenses"]["regain"]
+        self.extraLife = base["defenses"]["extraLife"]
+        self.damage = base["combat"]["damage"]
+        self.chargeShotDamage = base["combat"]["chargeShotDamage"]
+        self.shotDelay = base["combat"]["shotDelay"]
+        self.chargeDelay = base["combat"]["chargeDelay"]
+        self.exploit = base["combat"]["exploit"]
+        self.speed = base["extra"]["speed"]
+        self.luck = base["extra"]["luck"]
+        for key, val in base["weaknesses"].items():
+            setattr(self, key, val)
+        #Apply stats from parts
+        for part in self.parts:
+            part.upgrade(self)
     def draw(self, gameScreen):
         gameScreen.blit(self.image, self.rect)
+    def printStats(self):
+        print("----- PLAYER STATS -----")
+        print(f"Speed: {self.speed}")
+        print(f"Fire Rate: {self.shotDelay}")
+        print(f"Damage: {self.damage}")
+        print("-------------------------")

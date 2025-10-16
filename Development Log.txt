@@ -75,3 +75,12 @@ enemies can spawn and how many should spawn.
 Made it so enemies now added their worth to the players's cash on death. Tweaked text size of HUD.
 Also added sprites for the Player, Basic, Shooter, and Charger. Known bug is that the other enemies 
 are currently using the Basic enemy sprite. Will be fixed once the rest of the sprites are complete.
+
+10/11/25
+Started work on adding parts to the game. Common parts have been added to the game. Added a basic
+functionality to obtain parts and healing. HUD displays collected parts. Some checks need to be
+added to certain locations.
+
+10/12/25
+Added more parameters for the player to interact with the parts mechanic better. Created and added
+funcitonality for the shop.
