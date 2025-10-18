@@ -38,7 +38,7 @@ class Player():
                 "blockerWeak": False,
                 "combustionWeak": False,
                 "bossWeak": False
-}
+            }
 }
         #Health & Immunity Frames
         self.maxHealth = health
@@ -78,6 +78,53 @@ class Player():
         #Upgrades
         self.partAdditions = 0
         self.partMulti = 0.0
+        #Shop Upgrades
+        self.shipUpgrades = [
+            {
+                "name": "Ship Max Health",
+                "statType": "defense",
+                "LVL" : 1,
+                "maxLevel": 5,
+                "cost": 30,
+                "type": "maxHealth",
+                "description": "Increases max health of ship."
+            },
+            {
+                "name": "Ship Speed",
+                "statType": "extra",
+                "LVL" : 1,
+                "maxLevel": 3,
+                "cost": 20,
+                "type": "speed",
+                "description": "Increases speed of ship."
+            },
+            {
+                "name": "Bullet Upgrade",
+                "statType": "combat",
+                "LVL" : 1,
+                "maxLevel": 3,
+                "cost": 30,
+                "type": "bulletDamage",
+                "description": "Increases damage of bullets."
+            },
+            {
+                "name": "Laser Upgrade",
+                "statType": "combat",
+                "LVL" : 0,
+                "maxLevel": 3,
+                "cost": 50,
+                "type": "laserDamage",
+                "description": "Increases damage of laser. NOT IMPLEMENTED"
+            },
+            {
+                "name": "Missile Upgrade",
+                "statType": "combat",
+                "LVL" : 0,
+                "maxLevel": 3,
+                "cost": 50,
+                "type": "missileDamage",
+                "description": "Increases damage of missiles. NOT IMPLEMENTED"
+            }]
 
     def update(self, key, currentTime, paused):
         #Movement for player
@@ -121,11 +168,11 @@ class Player():
     def takeDamage(self, amount, currentTime):
         if self.alive:
             if not self.immune:
-                self.health -= amount
+                self.currentHealth -= amount
                 self.immune = True
                 self.immuneTime = currentTime
-                if self.health <= 0:
-                    self.health = 0
+                if self.currentHealth <= 0:
+                    self.currentHealth = 0
                     self.alive = False
                     #Send to Game Over Screen
     def partCollected(self, part):
@@ -134,7 +181,7 @@ class Player():
     def updateStats(self):
         base = self.baseStats
         #Reset all stats (can probably loop this)
-        self.health = base["defenses"]["health"]
+        self.currentHealth = base["defenses"]["maxHealth"]
         self.reduction = base["defenses"]["reduction"]
         self.immuneFrames = base["defenses"]["immuneFrames"]
         self.regain = base["defenses"]["regain"]
@@ -148,7 +195,9 @@ class Player():
         self.luck = base["extra"]["luck"]
         for key, val in base["weaknesses"].items():
             setattr(self, key, val)
-        #Apply stats from parts
+        #Apply upgrades from Shop Upgrades
+
+        #Apply stats from Parts
         for part in self.parts:
             part.upgrade(self)
     def draw(self, gameScreen):

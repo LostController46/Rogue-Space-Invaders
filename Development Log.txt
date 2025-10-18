@@ -84,3 +84,14 @@ added to certain locations.
 10/12/25
 Added more parameters for the player to interact with the parts mechanic better. Created and added
 funcitonality for the shop.
+
+10/17/25
+Added a group spawning mechanic for enemies. Needs to be tweaked to spawn either slower or a set 
+amount of enemies on screen. Added Shop now works in main loop. Need to remove items from shop 
+once bought. Fixed small issues with parameter changes. The Boss's laser is broken again and 
+needs to be fixed (continously shooting). Otherwise, core gameplay is now finished. 
+
+10/18/25
+Added basic functionality of shop for Ship upgrades. Still needs implementation of upgrading stats.
+Will add to the updateStats funciton for player.py. Placeholder code is in place for the Sabotages
+of the shop.

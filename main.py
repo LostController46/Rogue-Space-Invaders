@@ -39,6 +39,7 @@ bossSpawned = False
 enemiesKilled = 0
 enemiesLeft = 0
 enemiesDecided = False
+enemiesOnScreen = 15
 
 #Map Control
 mapCreated = False
@@ -48,6 +49,7 @@ nodePositions = {}
 shopPartsDecided = False
 shopParts = []
 currentShopSelection = [0,0]
+finishedShopping = False
 
 #Game Time
 def getGameTime():
@@ -261,10 +263,11 @@ def gameplay():
     global enemiesKilled
     global bossSpawned
     global enemiesDecided
+    global enemiesLeft
+    global enemiesOnScreen
     levelInfo = LEVEL_DATA[currentNode]
     spawnWhat = levelInfo["Enemies"]
     howLarge = levelInfo["Horde"]
-    global enemiesLeft
     if howLarge == "Small" and not enemiesDecided:
         enemiesDecided = True
         enemiesLeft = random.randint(10, 15)
@@ -277,6 +280,7 @@ def gameplay():
     elif howLarge == "Massive" and not enemiesDecided:
         enemiesDecided = True
         enemiesLeft = 45
+
 
     key = pygame.key.get_pressed()
     currentTime = getGameTime()
@@ -341,20 +345,23 @@ def gameplay():
         boss = attackers.BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
         bosses.append(boss)
         bossSpawned = True
-    elif currentTime - attackers.lastSpawnTime > attackers.enemySpawnDelay and (enemiesKilled < enemiesLeft) and not paused:
-        enemyX = random.randint(0, SCREEN_WIDTH - 50)
-        enemyType = random.choice(spawnWhat)
-        if enemyType == "Basic":
-            #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
-            enemies.append(attackers.Enemy(enemyX, -50))
-        elif enemyType == "Shooter":
-            enemies.append(attackers.Shooter(enemyX, -50))
-        elif enemyType == "Charger":
-            enemies.append(attackers.Charger(enemyX, -50))
-        elif enemyType == "Blocker":
-            enemies.append(attackers.Blocker(enemyX, -50))
-        elif enemyType == "Combustion":
-           enemies.append(attackers.Combustion(enemyX, -50))
+    elif currentTime - attackers.lastSpawnTime > attackers.enemySpawnDelay and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
+        groupSize = random.randint(1, 5)
+        groupSize = min(groupSize, enemiesLeft - enemiesKilled, enemiesOnScreen - len(enemies))
+        for _ in range(groupSize):
+            enemyX = random.randint(0, SCREEN_WIDTH - 50)
+            enemyType = random.choice(spawnWhat)
+            if enemyType == "Basic":
+                #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
+                enemies.append(attackers.Enemy(enemyX, -50))
+            elif enemyType == "Shooter":
+                enemies.append(attackers.Shooter(enemyX, -50))
+            elif enemyType == "Charger":
+                enemies.append(attackers.Charger(enemyX, -50))
+            elif enemyType == "Blocker":
+                enemies.append(attackers.Blocker(enemyX, -50))
+            elif enemyType == "Combustion":
+                enemies.append(attackers.Combustion(enemyX, -50))
         attackers.lastSpawnTime = currentTime
 
     #Draws the player, bullets, enemies, and their bullets
@@ -462,7 +469,15 @@ def textWrapping(surface, text, font, color, rect, length, lineSpacing=5):
 def drawShop(gameScreen):
     drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, currentLevel, enemiesLeft, enemiesKilled)
     drawMiddleHUD(gameScreen, gamer)
-    drawRightHUD(gameScreen, gamer.bulletList, gamer.currentWeapon)
+    
+    #Makes a leave prompt where the weapons would be
+    hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
+    leaveTextRect = pygame.Rect(hudRect.x + 5, hudRect.y + 5, hudRect.width - 10,  hudRect.height - 10)
+    leaveText = "Press Space to Leave"
+    textWrapping(gameScreen, leaveText, smallFont, (255, 255, 255), leaveTextRect, length = 10)
+    
     global shopPartsDecided
     global shopParts
     selectedCol, selectedRow = currentShopSelection
@@ -470,34 +485,34 @@ def drawShop(gameScreen):
     if shopPartsDecided == False:
         shopParts = randomShopParts()
         shopPartsDecided = True
-    if selectedCol == 0 and shopParts:
-        selectedPart = shopParts[selectedRow]
-    #Left
+
+    #Left Section: Parts
     partsRect = pygame.Rect(0, 100, 426, 700)
     pygame.draw.rect(gameScreen, (50, 50, 50), partsRect)
     pygame.draw.rect(gameScreen, (235, 227, 4), partsRect, 2)
     partDesc = pygame.Rect(0, 0, 426, 100)
     pygame.draw.rect(gameScreen, (50, 50, 50), partDesc)
     pygame.draw.rect(gameScreen, (235, 227, 4), partDesc, 2)
-    y_offset = 160
+    yOffset = 160
     if shopParts:
-        selectedPart = shopParts[selectedRow]
-        textWrapping(
-            gameScreen,
-            f"{selectedPart.name}: {selectedPart.desc}",
-            shopFont,
-            (225, 225, 225),
-            partDesc,
-            40
-        )
-    for i, part in enumerate(shopParts):
-        itemRect = pygame.Rect(partsRect.x + 5, y_offset + i * 120, partsRect.width - 10, 100)
-        if currentShopSelection == [0, i]:
-            pygame.draw.rect(gameScreen, (255, 255, 0), itemRect, 3)
-        nameText = smallFont.render(part.name, True, (255, 255, 255))
-        priceText = smallFont.render(f"${part.cost}", True, (255, 255, 0))
-        gameScreen.blit(nameText, (partsRect.x + 10, y_offset + i * 120))
-        gameScreen.blit(priceText, (partsRect.x + 10, y_offset + i * 120 + 40))
+        if selectedCol == 0:
+            selectedPart = shopParts[selectedRow]
+            textWrapping(
+                gameScreen,
+                f"{selectedPart.name}: {selectedPart.desc}",
+                shopFont,
+                (225, 225, 225),
+                partDesc,
+                40
+            )
+        for i, part in enumerate(shopParts):
+            itemRect = pygame.Rect(partsRect.x + 5, yOffset + i * 120, partsRect.width - 10, 100)
+            if currentShopSelection == [0, i]:
+                pygame.draw.rect(gameScreen, (255, 255, 0), itemRect, 3)
+            nameText = smallFont.render(part.name, True, (255, 255, 255))
+            priceText = smallFont.render(f"${part.cost}", True, (255, 255, 0))
+            gameScreen.blit(nameText, (partsRect.x + 10, yOffset + i * 120))
+            gameScreen.blit(priceText, (partsRect.x + 10, yOffset + i * 120 + 40))
 
     #Middle
     shipRect = pygame.Rect(426, 100, 426, 700)
@@ -506,6 +521,32 @@ def drawShop(gameScreen):
     shipDesc = pygame.Rect(426, 0, 426, 100)
     pygame.draw.rect(gameScreen, (50, 50, 50), shipDesc)
     pygame.draw.rect(gameScreen, (32, 183, 247), shipDesc, 2)
+    
+    if selectedCol == 1:
+        selectedUpgrade = gamer.shipUpgrades[selectedRow]
+        textWrapping(
+            gameScreen,
+            f"{selectedUpgrade['name']}: {selectedUpgrade['description']}",
+            shopFont,
+            (225, 225, 225),
+            shipDesc,
+            40
+        )
+    for i, upgrade in enumerate(gamer.shipUpgrades):
+        name = upgrade["name"]
+        lvl = upgrade["LVL"]
+        maxLvl = upgrade["maxLevel"]
+        cost = upgrade["cost"] * lvl
+        itemRect = pygame.Rect(shipRect.x + 5, yOffset + i * 120, shipRect.width - 10, 100)
+        if currentShopSelection == [1, i]:
+            pygame.draw.rect(gameScreen, (32, 183, 247), itemRect, 3)
+        nameText = smallFont.render(f"{name} (Lv {lvl}/{maxLvl})", True, (255, 255, 255))
+        if lvl >= maxLvl:
+            priceText = smallFont.render("MAXED", True, (100, 255, 100))
+        else:
+            priceText = smallFont.render(f"${cost}", True, (32, 183, 247))
+        gameScreen.blit(nameText, (shipRect.x + 10, yOffset + i * 120))
+        gameScreen.blit(priceText, (shipRect.x + 10, yOffset + i * 120 + 40))
 
     #Right
     saboRect = pygame.Rect(852, 100, 426, 700)
@@ -516,18 +557,22 @@ def drawShop(gameScreen):
     pygame.draw.rect(gameScreen, (208, 25, 25), saboDesc, 2)
 
 def giveReward(rewardType):
+    global state
     if rewardType == "Part":
         part = random.choice(parts.commonParts)
         gamer.partCollected(part)
-        print(f"You got: {part}!")
+        ##Debug code: print(f"You got: {part}!")
+        state = "Map"
     elif rewardType == "Heal":
         healAmount = 10
         gamer.currentHealth = gamer.currentHealth + healAmount
         if gamer.currentHealth > gamer.maxHealth:
             gamer.currentHealth = gamer.maxHealth
+        state = "Map"
     elif rewardType == "Shop":
-        drawShop(gamer.cash)
+        state = "Shop"
     elif rewardType == "BOSS_PART":
+        part = random.choice(parts.commonParts)
         gamer.parts.append(part)
 #--Main Loop--#
 run = True
@@ -549,7 +594,7 @@ while run:
                 elif event.key == pygame.K_RETURN:
                     if selectedOption == 0:
                         reset()
-                        state = "Shop"      #Change for testing
+                        state = "Map"      #Change for testing
                     elif selectedOption == 1:
                         state = "How To Play"
                     elif selectedOption == 2:
@@ -567,11 +612,10 @@ while run:
                     pausedTimeAccumulated += pygame.time.get_ticks() - pauseStartTime
                     pauseStartTime = None
             if enemiesKilled >= enemiesLeft:
-                rewardType = LEVEL_DATA[currentNode]["Rewards"]
-                giveReward(rewardType)
-
-                softReset()
-                state = "Map"
+                if currentNode != "Boss" or (currentNode == "Boss" and not bosses):
+                    rewardType = LEVEL_DATA[currentNode]["Rewards"]
+                    giveReward(rewardType)
+                    softReset()
         elif state == "GameOver":
             if event.type == pygame.KEYDOWN:
                 state = "MainMenu"
@@ -588,17 +632,71 @@ while run:
                     nextLevel(nextNode)
                     state = "Gameplay"
         elif state == "Shop":
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w:
-                    currentShopSelection[1] = max(0, currentShopSelection[1] - 1)
-                elif event.key == pygame.K_s:
-                    currentShopSelection[1] = min(len(shopParts) - 1, currentShopSelection[1] + 1)
-                # TODO: left/right movement for middle/right columns if implemented
-                elif event.key == pygame.K_RETURN:
-                    selectedPart = shopParts[currentShopSelection[1]]
-                    if gamer.cash >= selectedPart.cost:
-                        gamer.cash -= selectedPart.cost
-                        gamer.parts.append(selectedPart)
+            if finishedShopping == False:    
+                if event.type == pygame.KEYDOWN:
+                    col, row = currentShopSelection
+                    
+                    #Movement through shop
+                    if event.key == pygame.K_w:
+                        currentShopSelection[1] = max(0, row - 1)
+                    elif event.key == pygame.K_s:
+                        if col == 0:
+                            currentShopSelection[1] = min(len(shopParts) - 1, row + 1)
+                        elif col == 1:
+                            currentShopSelection[1] = min(len(gamer.shipUpgrades) - 1, row + 1)
+                        elif col == 2:
+                            #Temporary Code (Change shopParts to shopSabotages)
+                            currentShopSelection[1] = min(len(shopParts) - 1, row + 1)
+                    elif event.key == pygame.K_a:
+                        currentShopSelection[0] = max(0, col - 1)
+                        if currentShopSelection[0] == 0:
+                            currentShopSelection[1] = min(currentShopSelection[1], len(shopParts) - 1)
+                        elif currentShopSelection[0] == 1:
+                            currentShopSelection[1] = min(currentShopSelection[1], len(gamer.shipUpgrades) - 1)
+                        elif currentShopSelection[0] == 2:
+                            #Temp code (change shopParts to shopSabotages)
+                            currentShopSelection[1] = min(currentShopSelection[1], len(shopParts) - 1)
+                    elif event.key == pygame.K_d:
+                        currentShopSelection[0] = min(2, col + 1)
+                        if currentShopSelection[0] == 0:
+                            currentShopSelection[1] = min(currentShopSelection[1], len(shopParts) - 1)
+                        elif currentShopSelection[0] == 1:
+                            currentShopSelection[1] = min(currentShopSelection[1], len(gamer.shipUpgrades) - 1)
+                        elif currentShopSelection[0] == 2:
+                            #Temp code (change shopParts to shopSabotages)
+                            currentShopSelection[1] = min(currentShopSelection[1], len(shopParts) - 1)
+                    
+                    #Purchases
+                    elif event.key == pygame.K_RETURN:
+                        col, row = currentShopSelection
+
+                        #Parts Purchase
+                        if col == 0:
+                            selectedPart = shopParts[row]
+                            if gamer.cash >= selectedPart.cost:
+                                gamer.cash -= selectedPart.cost
+                                gamer.parts.append(selectedPart)
+
+                        #Ship Purchase
+                        elif col == 1: 
+                            selectedUpgrade = gamer.shipUpgrades[row]
+                            cost = selectedUpgrade["cost"] * selectedUpgrade["LVL"]
+                            if gamer.cash >= cost and selectedUpgrade["LVL"] < selectedUpgrade["maxLevel"]:
+                                gamer.cash -= cost
+                                selectedUpgrade["LVL"] += 1
+                                gamer.updateStats()
+
+                        #Sabotages Purchase (Placeholder)
+                        #elif col == 2:
+                        #    selectedSabo = shopSabotages[row]
+                        #    if gamer.cash >= selectedSabo.cost:
+                        #        gamer.cash -= selectedSabo.cost
+                    elif event.key == pygame.K_SPACE:
+                        finishedShopping = True
+                        shopPartsDecided = False
+            else:
+                state = "Map"
+                finishedShopping = False
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_DELETE:
             state = "MainMenu"
     
