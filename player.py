@@ -22,7 +22,7 @@ class Player():
                 "damage": damage,
                 "chargeShotDamage" : damage * 2,  
                 "shotDelay": 300,                     #The lower it is the faster the firing speed
-                "chargeDelay": 300,                   #The lower it is the faster the charge
+                "chargingSpeed": 1000,                #The lower it is the faster the charge
                 "exploit": 0,                         #Increases damage enemies take
             },
             "extra": 
@@ -68,7 +68,7 @@ class Player():
         #Bullet & Weapons
         self.lastShotTime = 0
         self.shotDelay = 300
-        self.chargeDelay = 300
+        self.chargingSpeed = 1000
         self.charging = False
         self.chargingStart = 0
         self.currentWeapon = 0  #Bullet is weapon 0
@@ -141,14 +141,14 @@ class Player():
             self.rect.x += self.speed
         #Action for shooting
         #Charged Shot
-        if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - self.lastShotTime >= self.chargeDelay:
+        if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - self.lastShotTime >= self.shotDelay:
             if not self.charging:
                 self.charging = True
                 self.chargingStart = currentTime
         elif self.charging and (not key[pygame.K_w] or not key[pygame.K_RSHIFT]):
             self.charging = False 
             chargeDuration = currentTime - self.chargingStart
-            fullyCharged = chargeDuration >= bullets.maxChargeTime
+            fullyCharged = chargeDuration >= self.chargingSpeed
             chargedShotX = self.rect.centerx - bullets.bulletWidth
             chargedShotY = self.rect.top
             if fullyCharged:
@@ -165,12 +165,15 @@ class Player():
             self.lastShotTime = currentTime
         if self.immune and currentTime - self.immuneTime >= self.immuneFrames:
             self.immune = False
-    def takeDamage(self, amount, currentTime):
+    def takeDamage(self, amount, currentTime, collision):
         if self.alive:
             if not self.immune:
-                self.currentHealth -= amount
                 self.immune = True
                 self.immuneTime = currentTime
+                if collision:
+                    self.currentHealth -= max(1, (amount + self.reduction))
+                else:
+                    self.currentHealth -= amount
                 if self.currentHealth <= 0:
                     self.currentHealth = 0
                     self.alive = False
@@ -180,23 +183,22 @@ class Player():
         self.updateStats()
     def updateStats(self):
         base = self.baseStats
-        #Reset all stats (can probably loop this)
-        self.currentHealth = base["defenses"]["maxHealth"]
-        self.reduction = base["defenses"]["reduction"]
-        self.immuneFrames = base["defenses"]["immuneFrames"]
-        self.regain = base["defenses"]["regain"]
-        self.extraLife = base["defenses"]["extraLife"]
-        self.damage = base["combat"]["damage"]
-        self.chargeShotDamage = base["combat"]["chargeShotDamage"]
-        self.shotDelay = base["combat"]["shotDelay"]
-        self.chargeDelay = base["combat"]["chargeDelay"]
-        self.exploit = base["combat"]["exploit"]
-        self.speed = base["extra"]["speed"]
-        self.luck = base["extra"]["luck"]
-        for key, val in base["weaknesses"].items():
-            setattr(self, key, val)
+        #Reset all stats
+        for category in ["defenses", "combat", "extra", "weaknesses"]:
+            for key, value in base[category].items():
+                setattr(self, key, value)
         #Apply upgrades from Shop Upgrades
-
+        for upgrade in self.shipUpgrades:
+            lvl = upgrade["LVL"]
+            if lvl > 0:
+                statType = upgrade["statType"]
+                statName = upgrade["type"]
+                if statName == "maxHealth":
+                    self.maxHealth += 10 * (lvl - 1)
+                elif statName == "speed":
+                    self.speed += 0.5 * (lvl - 1)
+                elif statName == "bulletDamage":
+                    self.damage += 1 * (lvl - 1)
         #Apply stats from Parts
         for part in self.parts:
             part.upgrade(self)

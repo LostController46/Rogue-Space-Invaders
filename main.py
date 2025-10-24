@@ -268,19 +268,21 @@ def gameplay():
     levelInfo = LEVEL_DATA[currentNode]
     spawnWhat = levelInfo["Enemies"]
     howLarge = levelInfo["Horde"]
-    if howLarge == "Small" and not enemiesDecided:
-        enemiesDecided = True
-        enemiesLeft = random.randint(10, 15)
-    elif howLarge == "Medium" and not enemiesDecided:
-        enemiesDecided = True
-        enemiesLeft = random.randint(20, 25)
-    elif howLarge == "Large" and not enemiesDecided:
-        enemiesDecided = True
-        enemiesLeft = random.randint(30, 35)
-    elif howLarge == "Massive" and not enemiesDecided:
-        enemiesDecided = True
-        enemiesLeft = 45
-
+    if not enemiesDecided:
+        if howLarge == "Small":
+            enemiesDecided = True
+            enemiesLeft = random.randint(10, 15)
+        elif howLarge == "Medium":
+            enemiesDecided = True
+            enemiesLeft = random.randint(20, 25)
+        elif howLarge == "Large":
+            enemiesDecided = True
+            enemiesLeft = random.randint(30, 35)
+        elif howLarge == "Massive":
+            enemiesDecided = True
+            enemiesLeft = 45
+        if hasattr(gamer, "regain") and gamer.regain > 0:
+            gamer.currentHealth = min(gamer.currentHealth + gamer.regain, gamer.maxHealth)
 
     key = pygame.key.get_pressed()
     currentTime = getGameTime()
@@ -293,30 +295,26 @@ def gameplay():
             if shot.rect.bottom < 0:
                 bullet.remove(shot)
 
-    #Update enemies
+    #Update enemies & bosses
     for enemy in enemies[:]:
         if isinstance(enemy, attackers.Shooter):
             enemy.update(currentTime, enemyBullets, gamer, paused)
         elif isinstance(enemy, attackers.Charger):
             enemy.update(gamer, paused)
-            if enemy.rect.colliderect(gamer.rect):
-                gamer.takeDamage(enemy.damage, currentTime)
         else:
             enemy.update(paused)
-            if enemy.rect.colliderect(gamer.rect):
-                gamer.takeDamage(enemy.damage, currentTime)
-
+        if enemy.rect.colliderect(gamer.rect):
+            gamer.takeDamage(enemy.damage, currentTime, True)
         if enemy.rect.top > SCREEN_HEIGHT:
             enemy.rect.y = -50
             enemy.rect.x = random.randint(0, SCREEN_WIDTH - enemy.rect.width)
-
     #Enemy & bosses gets hit by a bullet
     for enemy in enemies[:]:
         for shot in bullet[:]:
             if enemy.rect.colliderect(shot.rect):
                 bullet.remove(shot)
                 if isinstance(enemy, attackers.Blocker):
-                    enemy.takeDamage(shot.damage, charged=shot.charged)
+                    enemy.takeDamage(shot.damage, gamer, charged=shot.charged)
                 else:
                     enemy.health -= shot.damage
                 if enemy.health <= 0:
@@ -385,7 +383,7 @@ def gameplay():
             enemyBullets.remove(enemyBull)
             continue
         elif enemyBull.rect.colliderect(gamer.rect):
-            gamer.takeDamage(enemyBull.damage, currentTime)
+            gamer.takeDamage(enemyBull.damage, currentTime, False)
             if not isinstance(enemyBull, bullets.Laser):
                 enemyBullets.remove(enemyBull)
             continue

@@ -105,8 +105,10 @@ class Blocker(Enemy):
             elif self.rect.left <= 0:
                 self.rect.left = 0
                 self.direction = 1
-    def takeDamage(self, damage, charged = False):
-        if charged:
+    def takeDamage(self, damage, player, charged = False):
+        if charged and player.blockerWeak:
+            self.health -= damage * 2
+        elif charged:
             self.health -= damage
 class Combustion(Enemy):
     def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD):

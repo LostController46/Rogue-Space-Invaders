@@ -99,3 +99,6 @@ of the shop.
 10/23/25
 Fixed Boss infinitely firing by giving it it's own timer instead of relying on the game's timer.
 Added missing call to shop to update stats.
+
+10/24/25
+Cleaned up the updateStats function. Added checks for the current parts.
