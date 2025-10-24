@@ -42,7 +42,7 @@ class Bullet:
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, self.color, self.rect)
 class Laser(Bullet):
-    def __init__(self, gunRect, width = 10, height = config.SCREEN_HEIGHT, speed = 1, damage = 2, color=(25,255,0), direction = "N", duration = 1000):
+    def __init__(self, gunRect, width = 10, height = config.SCREEN_HEIGHT, speed = 1, damage = 2, color=(25,255,0), direction = "N", duration = 1000, currentTime = None):
         self.gunRect = gunRect
         self.width = width
         self.speed = speed
@@ -50,8 +50,12 @@ class Laser(Bullet):
         self.rect = pygame.Rect(0, 0, width, height)
         self.color = color
         self.direction = direction
-        self.spawnTime = pygame.time.get_ticks()
+        now = pygame.time.get_ticks() if currentTime is None else currentTime
+        self.spawnTime = now
         self.duration = duration
+        self.timer = now
+        self.activeTime = 0
+        self.expired = False
         self.updatePosition()
     def updatePosition(self):
         self.rect.centerx = self.gunRect.centerx
@@ -64,8 +68,13 @@ class Laser(Bullet):
     def update(self, currentTime, paused):
         if paused:
             return
+        if currentTime < self.timer:
+            self.timer = currentTime
+        delta = currentTime - self.timer
+        self.timer = currentTime
         self.updatePosition()
-        if currentTime - self.spawnTime >= self.duration:
+        self.activeTime += delta
+        if self.activeTime >= self.duration:
             self.expired = True
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, self.color, self.rect)

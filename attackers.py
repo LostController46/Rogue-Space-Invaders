@@ -162,7 +162,9 @@ class BossShooterBlockerFusion(Boss):
         self.guns = {gun: pygame.Rect(0,0, 30, 100) for gun in self.gunHealth}
         self.laserCooldown = 3000
         self.laserDuration = 1000
-        self.lastLaserShot = 0
+        self.lastLaserShot = pygame.time.get_ticks()
+        self.laserActiveTime = 0
+        self.timer = pygame.time.get_ticks()
         self.firingLaser = False
         self.damage = 2
         self.direction = 1 #-1 = Left/1 = Right
@@ -177,21 +179,26 @@ class BossShooterBlockerFusion(Boss):
         super().update(paused)
         if paused:
             return
+        delta = currentTime - self.timer
+        self.timer = currentTime
         if not self.movingDown:
             if self.firingLaser:
-                if currentTime - self.lastLaserShot >= self.laserDuration:
+                self.laserActiveTime += delta
+                if self.laserActiveTime >= self.laserDuration:
                     self.firingLaser = False
+                    self.lastLaserShot = currentTime
+                    self.laserActiveTime = 0
             else:
                 if currentTime - self.lastLaserShot >= self.laserCooldown:
-                    self.fireLasers(enemyBullets)
-                    self.lastLaserShot = currentTime
+                    self.fireLasers(enemyBullets, currentTime)
                     self.firingLaser = True
+                    self.laserActiveTime = 0
             for gun, offset in self.gunOffset.items():
                 self.guns[gun].topleft = (self.rect.x + offset[0], self.rect.y + offset[1])
-    def fireLasers(self, enemyBullets):        
+    def fireLasers(self, enemyBullets, currentTime):        
             for gun, health in self.gunHealth.items():
                 if health > 0:
-                    laser = bullets.Laser(self.guns[gun], width = 10, height = config.SCREEN_HEIGHT, damage = self.damage, direction="S", duration=self.laserDuration)
+                    laser = bullets.Laser(self.guns[gun], width = 10, height = config.SCREEN_HEIGHT, damage = self.damage, direction="S", duration=self.laserDuration, currentTime = currentTime)
                     enemyBullets.append(laser)
 
     def draw(self, gameScreen):

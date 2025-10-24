@@ -380,16 +380,16 @@ def gameplay():
                 enemyBull.update(paused)
         if getattr(enemyBull, "expired", False):
             enemyBullets.remove(enemyBull)
+            continue
         if enemyBull.rect.top > SCREEN_HEIGHT or enemyBull.rect.bottom < 0 or enemyBull.rect.right < 0 or enemyBull.rect.left > SCREEN_WIDTH:
             enemyBullets.remove(enemyBull)
+            continue
         elif enemyBull.rect.colliderect(gamer.rect):
-            if isinstance(enemyBull, bullets.Laser):
-                gamer.takeDamage(enemyBull.damage, currentTime)
-            else:
-                gamer.takeDamage(enemyBull.damage, currentTime)
+            gamer.takeDamage(enemyBull.damage, currentTime)
+            if not isinstance(enemyBull, bullets.Laser):
                 enemyBullets.remove(enemyBull)
-        else:
-            enemyBull.draw(gameScreen)
+            continue
+        enemyBull.draw(gameScreen)
     for boss in bosses:
         if boss.alive:
             boss.update(currentTime, paused, enemyBullets)
@@ -676,6 +676,7 @@ while run:
                             if gamer.cash >= selectedPart.cost:
                                 gamer.cash -= selectedPart.cost
                                 gamer.parts.append(selectedPart)
+                                gamer.updateStats()
 
                         #Ship Purchase
                         elif col == 1: 

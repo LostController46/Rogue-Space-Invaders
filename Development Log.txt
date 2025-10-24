@@ -95,3 +95,7 @@ needs to be fixed (continously shooting). Otherwise, core gameplay is now finish
 Added basic functionality of shop for Ship upgrades. Still needs implementation of upgrading stats.
 Will add to the updateStats funciton for player.py. Placeholder code is in place for the Sabotages
 of the shop.
+
+10/23/25
+Fixed Boss infinitely firing by giving it it's own timer instead of relying on the game's timer.
+Added missing call to shop to update stats.
