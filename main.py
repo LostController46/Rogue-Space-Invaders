@@ -5,6 +5,7 @@ import bullets
 import attackers
 import parts
 import textwrap
+import events
 
 pygame.init()
 
@@ -18,7 +19,8 @@ font = pygame.font.Font(None, 74)
 smallFont = pygame.font.Font(None, 50)
 enemyLeftFont = pygame.font.Font(None, 32)
 levelFont = pygame.font.Font(None, 20)
-shopFont = pygame.font.Font(None, 30)
+shopDescFont = pygame.font.Font(None, 30)
+shopFont = pygame.font.Font(None, 40)
 
 #Bullet code
 bullet = []
@@ -44,6 +46,7 @@ enemiesOnScreen = 15
 #Map Control
 mapCreated = False
 nodePositions = {}
+eventManager = events.EventManager()
 
 #Shop Control
 shopPartsDecided = False
@@ -153,14 +156,17 @@ def generateLevel():
             levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
             if levelEnemies == ["Blocker"]:
                 levelEnemies.append("Shooter")
+            eventManager.triggerRandomEvent()
             LEVEL_DATA[node] = {
                 "Horde": random.choice(HORDE_SIZE),
                 "Enemies": levelEnemies,
-                "Rewards": random.choice(REWARDS)
+                "Rewards": random.choice(REWARDS),
+                "Event": eventManager.currentEvent
             }
 def loadLevel(node):
     levelInfo = LEVEL_DATA.get(node, {})
-    print(f"Level {node}. Horde Size {levelInfo.get('Horde')}. Enemies {levelInfo.get('Enemies')}. Reward: {levelInfo.get('Rewards')}")
+    #Debug Line
+    #print(f"Level {node}. Horde Size {levelInfo.get('Horde')}. Enemies {levelInfo.get('Enemies')}. Reward: {levelInfo.get('Rewards')}")
 def nextLevel(newNode):
     global currentNode
     global selectedLevel
@@ -268,6 +274,7 @@ def gameplay():
     levelInfo = LEVEL_DATA[currentNode]
     spawnWhat = levelInfo["Enemies"]
     howLarge = levelInfo["Horde"]
+    whichEvent = levelInfo["Event"]
     if not enemiesDecided:
         if howLarge == "Small":
             enemiesDecided = True
@@ -281,6 +288,8 @@ def gameplay():
         elif howLarge == "Massive":
             enemiesDecided = True
             enemiesLeft = 45
+        if whichEvent == "extraEnemies":
+            enemiesLeft += random.randint(5,10)
         if hasattr(gamer, "regain") and gamer.regain > 0:
             gamer.currentHealth = min(gamer.currentHealth + gamer.regain, gamer.maxHealth)
 
@@ -343,23 +352,31 @@ def gameplay():
         boss = attackers.BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
         bosses.append(boss)
         bossSpawned = True
-    elif currentTime - attackers.lastSpawnTime > attackers.enemySpawnDelay and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
+    elif currentTime - attackers.lastSpawnTime > (attackers.enemySpawnDelay + gamer.getEnemyDelaySabo()) and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
         groupSize = random.randint(1, 5)
         groupSize = min(groupSize, enemiesLeft - enemiesKilled, enemiesOnScreen - len(enemies))
         for _ in range(groupSize):
             enemyX = random.randint(0, SCREEN_WIDTH - 50)
             enemyType = random.choice(spawnWhat)
+            #Prepare the enemy to spawn
             if enemyType == "Basic":
                 #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
-                enemies.append(attackers.Enemy(enemyX, -50))
+                prepEnemy = attackers.Enemy(enemyX, -50)
             elif enemyType == "Shooter":
-                enemies.append(attackers.Shooter(enemyX, -50))
+                prepEnemy = attackers.Shooter(enemyX, -50)
             elif enemyType == "Charger":
-                enemies.append(attackers.Charger(enemyX, -50))
+                prepEnemy = attackers.Charger(enemyX, -50)
             elif enemyType == "Blocker":
-                enemies.append(attackers.Blocker(enemyX, -50))
+                prepEnemy = attackers.Blocker(enemyX, -50)
             elif enemyType == "Combustion":
-                enemies.append(attackers.Combustion(enemyX, -50))
+                prepEnemy = attackers.Combustion(enemyX, -50)
+            #Apply sabotage effects
+            prepEnemy.health = max(1, prepEnemy.health + gamer.getEnemyHealthSabo())
+            prepEnemy.speed = max(1, prepEnemy.speed + gamer.getEnemySpeedSabo())
+            prepEnemy.damage = max(1, prepEnemy.damage + gamer.getEnemyDamageSabo())
+            prepEnemy.worth = max(1, prepEnemy.worth + gamer.getEnemyWorthSabo())
+            #Add enemy to list
+            enemies.append(prepEnemy)
         attackers.lastSpawnTime = currentTime
 
     #Draws the player, bullets, enemies, and their bullets
@@ -440,15 +457,22 @@ def drawMap(screen):
         if node not in ("Start", "Boss"):
             levelInfo = LEVEL_DATA[node]
             enemies = levelInfo["Enemies"]
+            specialEvent = levelInfo["Event"]
             symbols = ""
-            if "Basic" in enemies: symbols += "B "
-            if "Shooter" in enemies: symbols += "S "
-            if "Charger" in enemies: symbols += "C "
-            if "Blocker" in enemies: symbols += "Bl "
-            if "Combustion" in enemies: symbols += "X "
-            detail = levelFont.render(f"{levelInfo['Horde']}, {symbols.strip()}, {levelInfo['Rewards']}", True, (255, 255, 0))
-            detail_rect = detail.get_rect(center=(x, y + 30))
-            screen.blit(detail, detail_rect)
+            if specialEvent != "unknownEnemies":
+                if "Basic" in enemies: symbols += "B "
+                if "Shooter" in enemies: symbols += "S "
+                if "Charger" in enemies: symbols += "C "
+                if "Blocker" in enemies: symbols += "Bl "
+                if "Combustion" in enemies: symbols += "X "
+            else:
+                symbols += "?"
+            if specialEvent == "unknownRewards":
+                detail = levelFont.render(f"{levelInfo['Horde']}, {symbols.strip()}, {"???"}", True, (255, 255, 0))
+            else:
+                detail = levelFont.render(f"{levelInfo['Horde']}, {symbols.strip()}, {levelInfo['Rewards']}", True, (255, 255, 0))
+            detailRect = detail.get_rect(center=(x, y + 30))
+            screen.blit(detail, detailRect)
     if nextNodes:
         selectedNode = nextNodes[selectedLevel]
         pos = nodePositions[selectedNode]
@@ -498,7 +522,7 @@ def drawShop(gameScreen):
             textWrapping(
                 gameScreen,
                 f"{selectedPart.name}: {selectedPart.desc}",
-                shopFont,
+                shopDescFont,
                 (225, 225, 225),
                 partDesc,
                 40
@@ -507,8 +531,8 @@ def drawShop(gameScreen):
             itemRect = pygame.Rect(partsRect.x + 5, yOffset + i * 120, partsRect.width - 10, 100)
             if currentShopSelection == [0, i]:
                 pygame.draw.rect(gameScreen, (255, 255, 0), itemRect, 3)
-            nameText = smallFont.render(part.name, True, (255, 255, 255))
-            priceText = smallFont.render(f"${part.cost}", True, (255, 255, 0))
+            nameText = shopFont.render(part.name, True, (255, 255, 255))
+            priceText = shopFont.render(f"${part.cost}", True, (255, 255, 0))
             gameScreen.blit(nameText, (partsRect.x + 10, yOffset + i * 120))
             gameScreen.blit(priceText, (partsRect.x + 10, yOffset + i * 120 + 40))
 
@@ -525,7 +549,7 @@ def drawShop(gameScreen):
         textWrapping(
             gameScreen,
             f"{selectedUpgrade['name']}: {selectedUpgrade['description']}",
-            shopFont,
+            shopDescFont,
             (225, 225, 225),
             shipDesc,
             40
@@ -534,15 +558,18 @@ def drawShop(gameScreen):
         name = upgrade["name"]
         lvl = upgrade["LVL"]
         maxLvl = upgrade["maxLevel"]
-        cost = upgrade["cost"] * lvl
+        if lvl == 0:
+            cost = upgrade["cost"]
+        else:
+            cost = upgrade["cost"] * lvl
         itemRect = pygame.Rect(shipRect.x + 5, yOffset + i * 120, shipRect.width - 10, 100)
         if currentShopSelection == [1, i]:
             pygame.draw.rect(gameScreen, (32, 183, 247), itemRect, 3)
-        nameText = smallFont.render(f"{name} (Lv {lvl}/{maxLvl})", True, (255, 255, 255))
+        nameText = shopFont.render(f"{name} (Lv {lvl}/{maxLvl})", True, (255, 255, 255))
         if lvl >= maxLvl:
-            priceText = smallFont.render("MAXED", True, (100, 255, 100))
+            priceText = shopFont.render("MAXED", True, (100, 255, 100))
         else:
-            priceText = smallFont.render(f"${cost}", True, (32, 183, 247))
+            priceText = shopFont.render(f"${cost}", True, (32, 183, 247))
         gameScreen.blit(nameText, (shipRect.x + 10, yOffset + i * 120))
         gameScreen.blit(priceText, (shipRect.x + 10, yOffset + i * 120 + 40))
 
@@ -553,6 +580,35 @@ def drawShop(gameScreen):
     saboDesc = pygame.Rect(852, 0, 426, 100)
     pygame.draw.rect(gameScreen, (50, 50, 50), saboDesc)
     pygame.draw.rect(gameScreen, (208, 25, 25), saboDesc, 2)
+
+    if selectedCol == 2:
+        selectedSabo = gamer.saboUpgrades[selectedRow]
+        textWrapping(
+            gameScreen,
+            f"{selectedSabo['name']}: {selectedSabo['description']}",
+            shopDescFont,
+            (225, 225, 225),
+            saboDesc,
+            40
+        )
+    for i, upgrade in enumerate(gamer.saboUpgrades):
+        name = upgrade["name"]
+        lvl = upgrade["LVL"]
+        maxLvl = upgrade["maxLevel"]
+        if lvl == 0:
+            cost = upgrade["cost"]
+        else:
+            cost = upgrade["cost"] * lvl
+        itemRect = pygame.Rect(saboRect.x + 5, yOffset + i * 120, saboRect.width - 10, 100)
+        if currentShopSelection == [2, i]:
+            pygame.draw.rect(gameScreen, (208, 25, 25), itemRect, 3)
+        nameText = shopFont.render(f"{name} (Lv {lvl}/{maxLvl})", True, (255, 255, 255))
+        if lvl >= maxLvl:
+            priceText = shopFont.render("MAXED", True, (100, 255, 100))
+        else:
+            priceText = shopFont.render(f"${cost}", True, (208, 25, 25))
+        gameScreen.blit(nameText, (saboRect.x + 10, yOffset + i * 120))
+        gameScreen.blit(priceText, (saboRect.x + 10, yOffset + i * 120 + 40))
 
 def giveReward(rewardType):
     global state
@@ -643,8 +699,7 @@ while run:
                         elif col == 1:
                             currentShopSelection[1] = min(len(gamer.shipUpgrades) - 1, row + 1)
                         elif col == 2:
-                            #Temporary Code (Change shopParts to shopSabotages)
-                            currentShopSelection[1] = min(len(shopParts) - 1, row + 1)
+                            currentShopSelection[1] = min(len(gamer.saboUpgrades) - 1, row + 1)
                     elif event.key == pygame.K_a:
                         currentShopSelection[0] = max(0, col - 1)
                         if currentShopSelection[0] == 0:
@@ -652,8 +707,7 @@ while run:
                         elif currentShopSelection[0] == 1:
                             currentShopSelection[1] = min(currentShopSelection[1], len(gamer.shipUpgrades) - 1)
                         elif currentShopSelection[0] == 2:
-                            #Temp code (change shopParts to shopSabotages)
-                            currentShopSelection[1] = min(currentShopSelection[1], len(shopParts) - 1)
+                            currentShopSelection[1] = min(currentShopSelection[1], len(gamer.saboUpgrades) - 1)
                     elif event.key == pygame.K_d:
                         currentShopSelection[0] = min(2, col + 1)
                         if currentShopSelection[0] == 0:
@@ -661,8 +715,7 @@ while run:
                         elif currentShopSelection[0] == 1:
                             currentShopSelection[1] = min(currentShopSelection[1], len(gamer.shipUpgrades) - 1)
                         elif currentShopSelection[0] == 2:
-                            #Temp code (change shopParts to shopSabotages)
-                            currentShopSelection[1] = min(currentShopSelection[1], len(shopParts) - 1)
+                            currentShopSelection[1] = min(currentShopSelection[1], len(gamer.saboUpgrades) - 1)
                     
                     #Purchases
                     elif event.key == pygame.K_RETURN:
@@ -685,11 +738,14 @@ while run:
                                 selectedUpgrade["LVL"] += 1
                                 gamer.updateStats()
 
-                        #Sabotages Purchase (Placeholder)
-                        #elif col == 2:
-                        #    selectedSabo = shopSabotages[row]
-                        #    if gamer.cash >= selectedSabo.cost:
-                        #        gamer.cash -= selectedSabo.cost
+                        #Sabotages Purchase
+                        elif col == 2:
+                            selectedSabo = gamer.saboUpgrades[row]
+                            cost = selectedSabo["cost"] * selectedSabo["LVL"]
+                            if gamer.cash >= cost and selectedSabo["LVL"] < selectedSabo["maxLevel"]:
+                                gamer.cash -= cost
+                                selectedSabo["LVL"] += 1
+
                     elif event.key == pygame.K_SPACE:
                         finishedShopping = True
                         shopPartsDecided = False

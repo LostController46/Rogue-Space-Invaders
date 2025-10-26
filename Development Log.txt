@@ -101,4 +101,8 @@ Fixed Boss infinitely firing by giving it it's own timer instead of relying on t
 Added missing call to shop to update stats.
 
 10/24/25
-Cleaned up the updateStats function. Added checks for the current parts.
+Cleaned up the updateStats function. Added checks for the current parts. Added Sabotages to the 
+shop. Sabotages have been implemented.
+
+10/25/25
+Added more sprites and updated old sprites. Added special event to the map.

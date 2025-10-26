@@ -125,6 +125,48 @@ class Player():
                 "type": "missileDamage",
                 "description": "Increases damage of missiles. NOT IMPLEMENTED"
             }]
+        #Sabotage Upgrades
+        self.saboUpgrades = [
+            {
+                "name": "Faulty Manufacturing",
+                "type": "health",
+                "LVL" : 0,
+                "maxLevel": 5,
+                "cost": 30,
+                "description": "Lowers the max health of enemies."
+            },
+            {
+                "name": "Slow Suppy Lines",
+                "type": "enemySpawnDelay",
+                "LVL" : 0,
+                "maxLevel": 3,
+                "cost": 50,
+                "description": "Increases the delay for enemy spawns."
+            },
+            {
+                "name": "Tampered Boosters",
+                "type": "speed",
+                "LVL" : 0,
+                "maxLevel": 3,
+                "cost": 40,
+                "description": "Decreases the movement speed of enemies."
+            },
+            {
+                "name": "Weak Ammunition",
+                "type": "damage",
+                "LVL" : 0,
+                "maxLevel": 3,
+                "cost": 50,
+                "description": "Decreases the damage of enemies."
+            },
+            {
+                "name": "Worthy Scrap",
+                "type": "worth",
+                "LVL" : 0,
+                "maxLevel": 3,
+                "cost": 100,
+                "description": "Increases the worth of enemies."
+            }]
 
     def update(self, key, currentTime, paused):
         #Movement for player
@@ -204,9 +246,24 @@ class Player():
             part.upgrade(self)
     def draw(self, gameScreen):
         gameScreen.blit(self.image, self.rect)
-    def printStats(self):
-        print("----- PLAYER STATS -----")
-        print(f"Speed: {self.speed}")
-        print(f"Fire Rate: {self.shotDelay}")
-        print(f"Damage: {self.damage}")
-        print("-------------------------")
+    #Enemy Sabotage Calls
+    def getSabotageLevel(self, saboType):
+        for sabo in self.saboUpgrades:
+            if sabo["type"] == saboType:
+                return sabo["LVL"]
+        return 0
+    def getEnemyHealthSabo(self):
+        lvl = self.getSabotageLevel("health")
+        return -lvl
+    def getEnemySpeedSabo(self):
+        lvl = self.getSabotageLevel("speed")
+        return -lvl
+    def getEnemyDamageSabo(self):
+        lvl = self.getSabotageLevel("damage")
+        return -lvl
+    def getEnemyWorthSabo(self):
+        lvl = self.getSabotageLevel("worth")
+        return lvl
+    def getEnemyDelaySabo(self):
+        lvl = self.getSabotageLevel("enemySpawnDelay")
+        return lvl * 1000

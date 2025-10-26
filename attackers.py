@@ -6,6 +6,8 @@ import bullets
 BASIC_IMG = pygame.image.load("images/Basic.png")
 SHOOTER_IMG = pygame.image.load("images/Shooter.png")
 CHARGER_IMG = pygame.image.load("images/Charger.png")
+BLOCKER_IMG = pygame.image.load("images/Blocker.png")
+COMBUSTION_IMG = pygame.image.load("images/Combustion.png")
 
 enemyHP = config.enemyHP
 enemySPD = config.enemySPD
@@ -85,6 +87,8 @@ class Charger(Enemy):
 class Blocker(Enemy):
     def __init__(self, x, y, width = 70, height = 50, health = enemyHP * 4, speed = enemySPD):
         super().__init__(x, y, width, height, health, speed, color = (128, 128, 128))
+        self.image = pygame.transform.scale(BLOCKER_IMG, (width, height))
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.patrolY = 140 + random.randint(-20, 20)
         self.movingDown = True
         self.direction = 1 #-1 = Left/1 = Right
@@ -114,6 +118,10 @@ class Combustion(Enemy):
     def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD):
         super().__init__(x, y, width, height, health, speed, color = (172, 216, 230))
         self.type = random.choice(["T", "X"])
+        self.image = pygame.transform.scale(COMBUSTION_IMG, (width, height))
+        if self.type == "X":
+            self.image = pygame.transform.rotate(self.image, 45)
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.damage = 1
     def update(self, paused):
         if paused:
