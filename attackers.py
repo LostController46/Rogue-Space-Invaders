@@ -19,13 +19,13 @@ enemyWorth = config.enemyWorth
 bossWorth = config.bossWorth
 
 class Enemy:
-    def __init__(self, x, y, width = 50 , height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1):
+    def __init__(self, x, y, width = 50 , height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1, scaling = 0):
         self.image = pygame.transform.scale(BASIC_IMG, (width, height))
         self.rect = self.image.get_rect(topleft=(x,y))
-        self.speed = speed
+        self.speed = speed + (scaling // 4)
         self.color = color
-        self.health = health
-        self.damage = damage
+        self.health = health + (scaling // 3)
+        self.damage = damage + (scaling // 3)
         self.worth = enemyWorth
     def update(self, paused):
         if paused:
@@ -34,8 +34,8 @@ class Enemy:
     def draw(self, gameScreen):
         gameScreen.blit(self.image, self.rect)
 class Shooter(Enemy):
-    def __init__(self, x, y, width = 60 , height = 30, health = 1, speed = enemySPD + 2):
-        super().__init__(x, y, width, height, health, speed, color = (255,0,255))
+    def __init__(self, x, y, width = 60 , height = 30, health = 1, speed = enemySPD + 2, scaling = 0):
+        super().__init__(x, y, width, height, health, speed, color = (255,0,255), damage = 1, scaling = scaling)
         self.image = pygame.transform.scale(SHOOTER_IMG, (width, height))
         self.rect = self.image.get_rect(topleft=(x,y))
         self.patrolY = 100 + random.randint(-20, 20)
@@ -43,7 +43,6 @@ class Shooter(Enemy):
         self.direction = 1 #-1 = Left/1 = Right
         self.cooldown = enemyDelay
         self.lastShot = lastEnemyShotTime
-        self.damage = 1
     def update(self, currentTime, enemyBullets, player, paused):
         if paused:
             return
@@ -62,17 +61,16 @@ class Shooter(Enemy):
                 self.rect.left = 0
                 self.direction = 1
             #Only shoots when the player is near enough with some variance
-            if player and abs(self.rect.centerx - player.rect.centerx) < 100 + random.randint(-100,0):
+            if player and abs(self.rect.centerx - player.rect.centerx) < 50 + random.randint(-50,0):
                 if currentTime - self.lastShot >= self.cooldown:
-                    enemyBullets.append(bullets.Bullet(self.rect.centerx - 5, self.rect.bottom, 10, 20, 6, 1, 
+                    enemyBullets.append(bullets.Bullet(self.rect.centerx - 5, self.rect.bottom, 10, 20, 6, self.damage, 
                                                (255, 255, 0), direction = "S"))
                     self.lastShot = currentTime
 class Charger(Enemy):
-    def __init__(self, x, y, width = 40, height = 50, health = enemyHP + 1, speed = enemySPD + 4):
-        super().__init__(x, y, width, height, health, speed, color = (255,165,0))
+    def __init__(self, x, y, width = 40, height = 50, health = enemyHP + 1, speed = enemySPD + 4, scaling = 0):
+        super().__init__(x, y, width, height, health, speed, color = (255,165,0), damage = 2, scaling = scaling)
         self.image = pygame.transform.scale(CHARGER_IMG, (width, height))
         self.rect = self.image.get_rect(topleft=(x,y))
-        self.damage = 2
     def update(self, player, paused):
         if paused:
             return
@@ -85,14 +83,14 @@ class Charger(Enemy):
         self.rect.x += int(dx * self.speed)
         self.rect.y += self.speed - 1
 class Blocker(Enemy):
-    def __init__(self, x, y, width = 70, height = 50, health = enemyHP * 4, speed = enemySPD):
-        super().__init__(x, y, width, height, health, speed, color = (128, 128, 128))
+    def __init__(self, x, y, width = 70, height = 50, health = enemyHP * 4, speed = enemySPD, scaling = 0):
+        super().__init__(x, y, width, height, health, speed, color = (128, 128, 128), damage = 0, scaling = scaling)
         self.image = pygame.transform.scale(BLOCKER_IMG, (width, height))
         self.rect = self.image.get_rect(topleft=(x,y))
         self.patrolY = 140 + random.randint(-20, 20)
         self.movingDown = True
         self.direction = 1 #-1 = Left/1 = Right
-        self.damage = 0
+        self.reduction = 1 + (scaling // 3)
     def update(self, paused):
         if paused:
             return
@@ -110,34 +108,52 @@ class Blocker(Enemy):
                 self.rect.left = 0
                 self.direction = 1
     def takeDamage(self, damage, player, charged = False):
-        if charged and player.blockerWeak:
-            self.health -= damage * 2
-        elif charged:
-            self.health -= damage
+        if charged:
+            if player.blockerWeak:
+                self.health -= damage * 2
+            else:
+                self.health -= damage
+        else:
+            if player.blockerWeak:
+                self.health -= damage
+            else:
+                self.health -= max(damage - self.reduction, 1)
 class Combustion(Enemy):
-    def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD):
-        super().__init__(x, y, width, height, health, speed, color = (172, 216, 230))
+    def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD, scaling = 0):
+        super().__init__(x, y, width, height, health, speed, color = (172, 216, 230), damage = 1, scaling = scaling)
         self.type = random.choice(["T", "X"])
         self.image = pygame.transform.scale(COMBUSTION_IMG, (width, height))
         if self.type == "X":
             self.image = pygame.transform.rotate(self.image, 45)
         self.rect = self.image.get_rect(topleft=(x,y))
-        self.damage = 1
     def update(self, paused):
         if paused:
             return
         self.rect.y += self.speed
-    def onDeath(self, enemyBullets):
+    def onDeath(self, enemyBullets, weak, playerBullets):
+        #If sabotaged, add bullets to player's bullet list
         if self.type == "T":
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="N"))
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="S"))
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="E"))
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="W"))
+            if weak:
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="N"))
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="S"))
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="E"))
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="W"))
+            else:
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="N"))
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="S"))
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="E"))
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="W"))
         elif self.type == "X":
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="NE"))
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="NW"))
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SE"))
-            enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SW"))
+            if weak:
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="NE"))
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="NW"))
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SE"))
+                playerBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SW"))
+            else:
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="NE"))
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="NW"))
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SE"))
+                enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SW"))
 class Boss(Enemy):
     def __init__(self, x, y, width = 200, height = 150, health = 50, speed = enemySPD, color = (139,133,137)):
         super().__init__(x, y, width, height, health, speed, color)

@@ -8,6 +8,7 @@ class Player():
     def __init__(self, x = 640, y = 700, health = 20, speed = 15, damage = 1, bulletList = []):
         self.image = pygame.transform.scale(PLAYER_IMG, (50, 50))
         self.rect = self.image.get_rect(topleft=(x,y))
+        self.currentLevel = 1
         self.baseStats = {
             "defenses": 
             {
@@ -19,7 +20,8 @@ class Player():
             },
             "combat" : 
             {
-                "damage": damage,
+                "damage": 0,                          #Universal damage increase
+                "bulletDamage": damage,
                 "chargeShotDamage" : damage * 2,  
                 "shotDelay": 300,                     #The lower it is the faster the firing speed
                 "chargingSpeed": 1000,                #The lower it is the faster the charge
@@ -29,6 +31,7 @@ class Player():
             {
                 "speed": speed,
                 "luck": 0,                            #Increases chances for rarer parts
+                "jammed": 0
             },
             "weaknesses":                           #Increases damage against this type of enemy
             {
@@ -51,12 +54,14 @@ class Player():
         self.immune = False
         self.extraLife = 0
         #Damage Stats
-        self.damage = damage
+        self.damage = 0
+        self.bulletDamage = damage
         self.chargeShotDamage = damage * 2
         #Extra Stats
         self.speed = speed
         self.luck = 0
         self.cash = 0
+        self.jammed = 0
         self.parts = []
         #Exploit Enemy Weaknesses
         self.basicWeak = False
@@ -195,7 +200,7 @@ class Player():
             chargedShotY = self.rect.top
             if fullyCharged:
                 self.bulletList.append(bullets.Bullet(chargedShotX, chargedShotY, bullets.bulletWidth, bullets.bulletHeight, 
-                                    bullets.chargedShotSPD, self.chargeShotDamage, color=(235, 180, 52), 
+                                    bullets.chargedShotSPD, self.chargeShotDamage + self.damage, color=(235, 180, 52), 
                                     direction = "N", charged=True))
                 self.lastShotTime = currentTime
         #Normal shot
@@ -203,7 +208,7 @@ class Player():
             bulletX = self.rect.centerx - bullets.bulletWidth
             bulletY = self.rect.top
             self.bulletList.append(bullets.Bullet(bulletX, bulletY, bullets.bulletWidth, bullets.bulletHeight, 
-                                bullets.bulletSPD, self.damage, color=(255,255,255), direction = "N"))
+                                bullets.bulletSPD, self.bulletDamage + self.damage, color=(255,255,255), direction = "N"))
             self.lastShotTime = currentTime
         if self.immune and currentTime - self.immuneTime >= self.immuneFrames:
             self.immune = False
@@ -217,9 +222,20 @@ class Player():
                 else:
                     self.currentHealth -= amount
                 if self.currentHealth <= 0:
-                    self.currentHealth = 0
-                    self.alive = False
-                    #Send to Game Over Screen
+                    #If you have a life give half health back to the player
+                    if self.extraLife > 0:
+                        self.currentHealth = self.maxHealth // 2
+                        self.extraLife -= 1
+
+                        #Remove Insert Token if used. Modify for other extra life mechanics
+                        for part in self.parts:
+                            if part.name == "Insert Token":
+                                self.parts.remove(part)
+                                break
+                    else:
+                        self.currentHealth = 0
+                        self.alive = False
+                        #Send to Game Over Screen
     def partCollected(self, part):
         self.parts.append(part)
         self.updateStats()
@@ -240,7 +256,7 @@ class Player():
                 elif statName == "speed":
                     self.speed += 0.5 * (lvl - 1)
                 elif statName == "bulletDamage":
-                    self.damage += 1 * (lvl - 1)
+                    self.bulletDamage += 1 * (lvl - 1)
         #Apply stats from Parts
         for part in self.parts:
             part.upgrade(self)

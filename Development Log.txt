@@ -106,3 +106,11 @@ shop. Sabotages have been implemented.
 
 10/25/25
 Added more sprites and updated old sprites. Added special event to the map.
+
+10/30/25
+Added Rare Parts and their checks, enemy scaling, and luck mechanics for the part reward and the
+shop now randomizes the rareParts.
+
+10/31/25
+Parts are now removed from the shop when bought. Reworked Blocker to have a damage reduction
+mechanic instead of blocking all bullet shots.

@@ -27,7 +27,6 @@ bullet = []
 
 #Player code
 gamer = player.Player(bulletList = bullet)
-currentLevel = 1
 gameOverTime = None
 gameStartTime = pygame.time.get_ticks()
 pauseStartTime = None
@@ -150,7 +149,7 @@ def generateLevel():
         if node == "Start":
             LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Reward": None}
         elif node == "Boss":
-            LEVEL_DATA[node] = {"Horde": "Massive", "Enemies": ENEMY_TYPES, "Reward": "BOSS_PART"}
+            LEVEL_DATA[node] = {"Horde": "Massive", "Enemies": ENEMY_TYPES, "Reward": "BOSS_PART", "Event": None}
         else:
             #Prevents only Blockers from spawning
             levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
@@ -323,13 +322,19 @@ def gameplay():
             if enemy.rect.colliderect(shot.rect):
                 bullet.remove(shot)
                 if isinstance(enemy, attackers.Blocker):
-                    enemy.takeDamage(shot.damage, gamer, charged=shot.charged)
+                    if shot.charged:
+                        enemy.takeDamage(gamer.chargeShotDamage, gamer, charged=shot.charged)
+                    else:
+                        enemy.takeDamage(shot.damage, gamer)
                 else:
                     enemy.health -= shot.damage
                 if enemy.health <= 0:
                     if isinstance(enemy, attackers.Combustion):
-                        enemy.onDeath(enemyBullets)
-                    gamer.cash += enemy.worth
+                        enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
+                    if gamer.basicWeak and isinstance(enemy, attackers.Basic):
+                        gamer.cash += enemy.worth + 3
+                    else:
+                        gamer.cash += enemy.worth
                     enemies.remove(enemy)
                     enemiesKilled += 1
                 break
@@ -352,7 +357,7 @@ def gameplay():
         boss = attackers.BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
         bosses.append(boss)
         bossSpawned = True
-    elif currentTime - attackers.lastSpawnTime > (attackers.enemySpawnDelay + gamer.getEnemyDelaySabo()) and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
+    elif currentTime - attackers.lastSpawnTime > (attackers.enemySpawnDelay + gamer.getEnemyDelaySabo()) + gamer.jammed and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
         groupSize = random.randint(1, 5)
         groupSize = min(groupSize, enemiesLeft - enemiesKilled, enemiesOnScreen - len(enemies))
         for _ in range(groupSize):
@@ -361,15 +366,15 @@ def gameplay():
             #Prepare the enemy to spawn
             if enemyType == "Basic":
                 #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
-                prepEnemy = attackers.Enemy(enemyX, -50)
+                prepEnemy = attackers.Enemy(enemyX, -50, scaling = gamer.currentLevel)
             elif enemyType == "Shooter":
-                prepEnemy = attackers.Shooter(enemyX, -50)
+                prepEnemy = attackers.Shooter(enemyX, -50, scaling = gamer.currentLevel)
             elif enemyType == "Charger":
-                prepEnemy = attackers.Charger(enemyX, -50)
+                prepEnemy = attackers.Charger(enemyX, -50, scaling = gamer.currentLevel)
             elif enemyType == "Blocker":
-                prepEnemy = attackers.Blocker(enemyX, -50)
+                prepEnemy = attackers.Blocker(enemyX, -50, scaling = gamer.currentLevel)
             elif enemyType == "Combustion":
-                prepEnemy = attackers.Combustion(enemyX, -50)
+                prepEnemy = attackers.Combustion(enemyX, -50, scaling = gamer.currentLevel)
             #Apply sabotage effects
             prepEnemy.health = max(1, prepEnemy.health + gamer.getEnemyHealthSabo())
             prepEnemy.speed = max(1, prepEnemy.speed + gamer.getEnemySpeedSabo())
@@ -409,7 +414,7 @@ def gameplay():
         if boss.alive:
             boss.update(currentTime, paused, enemyBullets)
             boss.draw(gameScreen)
-    drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, currentLevel, enemiesLeft, enemiesKilled)
+    drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled)
     drawMiddleHUD(gameScreen, gamer)
     drawRightHUD(gameScreen, ["Bullet"], gamer.currentWeapon)
 #endregion
@@ -478,7 +483,35 @@ def drawMap(screen):
         pos = nodePositions[selectedNode]
         pygame.draw.circle(screen, (255, 0, 0), pos, 26, 3)
 def randomShopParts():
-    randomPartList = random.sample(parts.commonParts, 5)
+    randomPartList = []
+    playerPartsList = {part.name for part in gamer.parts}
+    usedParts = set(playerPartsList)
+    legendaryCount = 0
+    for _ in range(5):
+        roll = random.random() + (gamer.luck / 200)
+        #Chance for common
+        if roll < 0.6:
+            part = parts.commonParts
+        #Chance for rare
+        elif roll < 0.95:
+            part = parts.rareParts
+        #Chance for legendary
+        else:
+            if legendaryCount == 0:
+                part = parts.legendaryParts
+                legendaryCount += 1
+            #If a legendary is already generated, give a rare part
+            else:
+                part = parts.rareParts
+        #Filters the parts that the player/shop has
+        available = [p for p in part if p.name not in usedParts]
+        #Just adds the first common part if nothing is available
+        if not available:
+            newPart = parts.commonParts[0]
+        else:
+            newPart = random.choice(available)
+        usedParts.add(newPart.name)
+        randomPartList.append(newPart)
     return randomPartList
 def textWrapping(surface, text, font, color, rect, length, lineSpacing=5):
     maxChars = length  # adjust to fit your box width
@@ -489,7 +522,7 @@ def textWrapping(surface, text, font, color, rect, length, lineSpacing=5):
         surface.blit(line_surf, (rect.x + 5, yOffset))
         yOffset += font.get_height() + lineSpacing
 def drawShop(gameScreen):
-    drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, currentLevel, enemiesLeft, enemiesKilled)
+    drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled)
     drawMiddleHUD(gameScreen, gamer)
     
     #Makes a leave prompt where the weapons would be
@@ -613,7 +646,15 @@ def drawShop(gameScreen):
 def giveReward(rewardType):
     global state
     if rewardType == "Part":
-        part = random.choice(parts.commonParts)
+        #Have a base of 60% for common and 40% for rare
+        #Luck skews the odds to be 30% for common and 70% for rare with 60 luck
+        #and the luck can't be skewed past this point.
+        rarityOdds = max(0.6 - (gamer.luck / 200), 0.3)
+        roll = random.random()
+        if roll < rarityOdds:
+            part = random.choice(parts.commonParts)
+        else:
+            part = random.choice(parts.rareParts)
         gamer.partCollected(part)
         ##Debug code: print(f"You got: {part}!")
         state = "Map"
@@ -668,6 +709,7 @@ while run:
             if enemiesKilled >= enemiesLeft:
                 if currentNode != "Boss" or (currentNode == "Boss" and not bosses):
                     rewardType = LEVEL_DATA[currentNode]["Rewards"]
+                    gamer.currentLevel += 1
                     giveReward(rewardType)
                     softReset()
         elif state == "GameOver":
@@ -728,6 +770,11 @@ while run:
                                 gamer.cash -= selectedPart.cost
                                 gamer.parts.append(selectedPart)
                                 gamer.updateStats()
+
+                                #Remove part from shop
+                                shopParts.remove(selectedPart)
+                                if row >= len(shopParts):
+                                    row = max(0, len(shopParts) - 1)
 
                         #Ship Purchase
                         elif col == 1: 
