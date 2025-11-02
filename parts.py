@@ -33,15 +33,15 @@ commonParts = [Part("Old Booster", "It may be old, but it gets the job done. Inc
                Part("Mechanical Gear", "The gears move faster. Increases fire rate.", "+", "shotDelay", -20, 15),
                Part("Cooling System", "Prevents the heating system from overheating. Increases charging speed", "+", "chargingSpeed", -50, 20),
                Part("Wrench", "Helps for repairs. Heal after every level", "+", "regain", 3, 15),
-               Part("Lucky Clover", "Reminds you of home. Increases chance of getting rarer items.", "+", "luck", 10, 25),
+               Part("Lucky Clover", "Reminds you of home. Increases chance of luck.", "+", "luck", 10, 25),
                Part("Blocker Data Sample", "Data of Blocker's weaknesses. Increases damage against Blockers", "+", "blockerWeak", True, 15),
                Part("Targeting System", "Helps to aim better. Increases damage for bullet.", "+", "bulletDamage", 1, 25),
                Part("Impenetrable Armor", "Protects the ship from collisions. Reduces collision damage.", "+", "reduction", -1, 20)]
 
 rareParts = [Part("Warp Drive", "We're going beyond space. Greatly increases movement speed.", "+", "speed", 8, 30),                            #Check if works, should tho
-             Part("Pre-heated Ammunition", " . Increased damage of weapons.", "+", "damage", 1, 40),                            #Check if works
+             Part("Pre-heated Ammunition", "Pre-heat weapons to prep for battle. Increased damage of weapons.", "+", "damage", 1, 40),                            #Check if works
              #Part("Piercing Shot", "Pierce straight through their defenses. Bullets can pierce an enemy.", "+", "pierceUpgrade", "True", 40),   #Might not implement
-             Part("Insert Token", "Insert coin. Prevent death once.", "+", "extraLife", 1, 60),
+             Part("Insert Token", "Insert coin. Prevents death once.", "+", "extraLife", 1, 60),
              Part("Heavy Plating", "Keeps the ship safe at a cost. Decreases damage taken, but reduces movement speed.", "+", ["reduction", "speed"], [1, -2], 50),  #Should work, needs testing
              Part("Lucky Dice", "Let's go gambling! Greatly increases luck.", "+", "luck", 20, 70),
              Part("Jammer", "No signal needed. Increases enemy spawn times.", "+", "jammed", 500, 50),                              #Check if works
