@@ -53,6 +53,10 @@ shopParts = []
 currentShopSelection = [0,0]
 finishedShopping = False
 
+#Sound Control
+pygame.mixer.init()
+enemyDeath = pygame.mixer.Sound("sounds/enemyDeath.wav")
+
 #Game Time
 def getGameTime():
     if paused and pauseStartTime is not None:
@@ -331,11 +335,12 @@ def gameplay():
                 if enemy.health <= 0:
                     if isinstance(enemy, attackers.Combustion):
                         enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
-                    if gamer.basicWeak and isinstance(enemy, attackers.Basic):
+                    if gamer.basicWeak and isinstance(enemy, attackers.Enemy):
                         gamer.cash += enemy.worth + 3
                     else:
                         gamer.cash += enemy.worth
                     enemies.remove(enemy)
+                    enemyDeath.play()
                     enemiesKilled += 1
                 break
     for boss in bosses[:]: 
@@ -773,8 +778,13 @@ while run:
 
                                 #Remove part from shop
                                 shopParts.remove(selectedPart)
-                                if row >= len(shopParts):
-                                    row = max(0, len(shopParts) - 1)
+                                if len(shopParts) > 0:
+                                    if row >= len(shopParts):
+                                        row = max(0, len(shopParts) - 1)
+                                    currentShopSelection = [col, row]
+                                else:
+                                    #Move to ship purchases once parts are gone.
+                                    currentShopSelection = [1,0]
 
                         #Ship Purchase
                         elif col == 1: 

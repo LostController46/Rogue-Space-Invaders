@@ -114,3 +114,6 @@ shop now randomizes the rareParts.
 10/31/25
 Parts are now removed from the shop when bought. Reworked Blocker to have a damage reduction
 mechanic instead of blocking all bullet shots.
+
+11/1/25
+Bullets, Lasers, and Enemy Death sounds have been added.

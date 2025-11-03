@@ -18,6 +18,11 @@ lastEnemyShotTime = config.lastEnemyShotTime
 enemyWorth = config.enemyWorth
 bossWorth = config.bossWorth
 
+#Sound Control
+pygame.mixer.init()
+bulletShot = pygame.mixer.Sound("sounds/enemyBulletShot.wav")
+laserShot = pygame.mixer.Sound("sounds/enemyLaserShot.wav")
+
 class Enemy:
     def __init__(self, x, y, width = 50 , height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1, scaling = 0):
         self.image = pygame.transform.scale(BASIC_IMG, (width, height))
@@ -65,6 +70,7 @@ class Shooter(Enemy):
                 if currentTime - self.lastShot >= self.cooldown:
                     enemyBullets.append(bullets.Bullet(self.rect.centerx - 5, self.rect.bottom, 10, 20, 6, self.damage, 
                                                (255, 255, 0), direction = "S"))
+                    bulletShot.play(maxtime = 500)
                     self.lastShot = currentTime
 class Charger(Enemy):
     def __init__(self, x, y, width = 40, height = 50, health = enemyHP + 1, speed = enemySPD + 4, scaling = 0):
@@ -154,6 +160,7 @@ class Combustion(Enemy):
                 enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="NW"))
                 enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SE"))
                 enemyBullets.append(bullets.Bullet(self.rect.centerx, self.rect.centery, 10, 10, 6, 1, (255,200,0), direction="SW"))
+        bulletShot.play(maxtime = 500)
 class Boss(Enemy):
     def __init__(self, x, y, width = 200, height = 150, health = 50, speed = enemySPD, color = (139,133,137)):
         super().__init__(x, y, width, height, health, speed, color)
@@ -226,6 +233,7 @@ class BossShooterBlockerFusion(Boss):
                 if health > 0:
                     laser = bullets.Laser(self.guns[gun], width = 10, height = config.SCREEN_HEIGHT, damage = self.damage, direction="S", duration=self.laserDuration, currentTime = currentTime)
                     enemyBullets.append(laser)
+                    laserShot.play(maxtime = 1000)
 
     def draw(self, gameScreen):
         super().draw(gameScreen)

@@ -4,6 +4,10 @@ import bullets
 
 PLAYER_IMG = pygame.image.load("images/player.png")
 
+#Sound Control
+pygame.mixer.init()
+bulletShot = pygame.mixer.Sound("sounds/bulletShot.wav")
+
 class Player():
     def __init__(self, x = 640, y = 700, health = 20, speed = 15, damage = 1, bulletList = []):
         self.image = pygame.transform.scale(PLAYER_IMG, (50, 50))
@@ -209,6 +213,7 @@ class Player():
             bulletY = self.rect.top
             self.bulletList.append(bullets.Bullet(bulletX, bulletY, bullets.bulletWidth, bullets.bulletHeight, 
                                 bullets.bulletSPD, self.bulletDamage + self.damage, color=(255,255,255), direction = "N"))
+            bulletShot.play(maxtime = 500)
             self.lastShotTime = currentTime
         if self.immune and currentTime - self.immuneTime >= self.immuneFrames:
             self.immune = False
