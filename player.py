@@ -7,6 +7,7 @@ PLAYER_IMG = pygame.image.load("images/player.png")
 #Sound Control
 pygame.mixer.init()
 bulletShot = pygame.mixer.Sound("sounds/bulletShot.wav")
+laserShot = pygame.mixer.Sound("sounds/laserShot.wav")
 
 class Player():
     def __init__(self, x = 640, y = 700, health = 20, speed = 15, damage = 1, bulletList = []):
@@ -26,9 +27,12 @@ class Player():
             {
                 "damage": 0,                          #Universal damage increase
                 "bulletDamage": damage,
-                "chargeShotDamage" : damage * 2,  
+                "chargeShotDamage" : damage * 2,
+                "laserDamage": 4,
                 "shotDelay": 300,                     #The lower it is the faster the firing speed
                 "chargingSpeed": 1000,                #The lower it is the faster the charge
+                "laserChargeSpeed": 3000,             #The lower it is the faster the charge speed
+                "laserCooldown": 1300,                #The lower it is the faster the cooldown
                 "exploit": 0,                         #Increases damage enemies take
             },
             "extra": 
@@ -61,6 +65,7 @@ class Player():
         self.damage = 0
         self.bulletDamage = damage
         self.chargeShotDamage = damage * 2
+        self.laserDamage = 4
         #Extra Stats
         self.speed = speed
         self.luck = 0
@@ -80,8 +85,13 @@ class Player():
         self.chargingSpeed = 1000
         self.charging = False
         self.chargingStart = 0
-        self.currentWeapon = 0  #Bullet is weapon 0
+        self.laserChargeSpeed = 3000
+        self.laserCooldown = 1300
+        self.currentWeaponIndex = 0  #Bullet is weapon 0
         self.bulletList = bulletList
+        self.weaponList = ["Bullet"]
+        self.currentWeapon = self.weaponList[self.currentWeaponIndex]
+        self.lastWeaponSwitchTime = 0
         #Currently Paused
         self.pause = False
         #Upgrades
@@ -123,7 +133,7 @@ class Player():
                 "maxLevel": 3,
                 "cost": 50,
                 "type": "laserDamage",
-                "description": "Increases damage of laser. NOT IMPLEMENTED"
+                "description": "Increases damage of laser."
             },
             {
                 "name": "Missile Upgrade",
@@ -191,30 +201,55 @@ class Player():
         elif key[pygame.K_d] and self.rect.right < config.SCREEN_WIDTH:
             self.rect.x += self.speed
         #Action for shooting
+        #Swap weapons
+        if key[pygame.K_PERIOD] and currentTime - self.lastWeaponSwitchTime > 300:
+            if len(self.weaponList) > 1:
+                self.currentWeaponIndex = (self.currentWeaponIndex + 1) % len(self.weaponList)
+                self.currentWeapon = self.weaponList[self.currentWeaponIndex]
+            self.lastWeaponSwitchTime = currentTime
+
         #Charged Shot
-        if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - self.lastShotTime >= self.shotDelay:
-            if not self.charging:
-                self.charging = True
-                self.chargingStart = currentTime
-        elif self.charging and (not key[pygame.K_w] or not key[pygame.K_RSHIFT]):
-            self.charging = False 
-            chargeDuration = currentTime - self.chargingStart
-            fullyCharged = chargeDuration >= self.chargingSpeed
-            chargedShotX = self.rect.centerx - bullets.bulletWidth
-            chargedShotY = self.rect.top
-            if fullyCharged:
-                self.bulletList.append(bullets.Bullet(chargedShotX, chargedShotY, bullets.bulletWidth, bullets.bulletHeight, 
-                                    bullets.chargedShotSPD, self.chargeShotDamage + self.damage, color=(235, 180, 52), 
-                                    direction = "N", charged=True))
+        if self.currentWeapon == "Bullet":
+            if key[pygame.K_w] and key[pygame.K_RSHIFT] and currentTime - self.lastShotTime >= self.shotDelay:
+                if not self.charging:
+                    self.charging = True
+                    self.chargingStart = currentTime
+            elif self.charging and (not key[pygame.K_w] or not key[pygame.K_RSHIFT]):
+                self.charging = False 
+                chargeDuration = currentTime - self.chargingStart
+                fullyCharged = chargeDuration >= self.chargingSpeed
+                chargedShotX = self.rect.centerx - bullets.bulletWidth
+                chargedShotY = self.rect.top
+                if fullyCharged:
+                    self.bulletList.append(bullets.Bullet(chargedShotX, chargedShotY, bullets.bulletWidth, bullets.bulletHeight, 
+                                        bullets.chargedShotSPD, self.chargeShotDamage + self.damage, color=(235, 180, 52), 
+                                        direction = "N", charged=True))
+                    self.lastShotTime = currentTime
+            #Normal shot
+            elif key[pygame.K_w] and currentTime - self.lastShotTime >= self.shotDelay and not key[pygame.K_RSHIFT]:
+                bulletX = self.rect.centerx - bullets.bulletWidth
+                bulletY = self.rect.top
+                self.bulletList.append(bullets.Bullet(bulletX, bulletY, bullets.bulletWidth, bullets.bulletHeight, 
+                                    bullets.bulletSPD, self.bulletDamage + self.damage, color=(255,255,255), direction = "N"))
+                bulletShot.play(maxtime = 500)
                 self.lastShotTime = currentTime
-        #Normal shot
-        elif key[pygame.K_w] and currentTime - self.lastShotTime >= self.shotDelay and not key[pygame.K_RSHIFT]:
-            bulletX = self.rect.centerx - bullets.bulletWidth
-            bulletY = self.rect.top
-            self.bulletList.append(bullets.Bullet(bulletX, bulletY, bullets.bulletWidth, bullets.bulletHeight, 
-                                bullets.bulletSPD, self.bulletDamage + self.damage, color=(255,255,255), direction = "N"))
-            bulletShot.play(maxtime = 500)
-            self.lastShotTime = currentTime
+        elif self.currentWeapon == "Laser":
+            if key[pygame.K_w]:
+                if not self.charging:
+                    self.charging = True
+                    self.chargingStart = currentTime
+                    #print("Started charging laser")
+            else:
+                if self.charging:
+                    self.charging = False
+                    chargeDuration = currentTime - self.chargingStart
+                    fullyCharged = chargeDuration >= self.laserChargeSpeed
+                    #print("Released laser key", chargeDuration, fullyCharged)
+                    if fullyCharged and currentTime - self.lastShotTime >= self.laserCooldown:
+                        self.bulletList.append(bullets.Laser(self.rect, damage=self.laserDamage, direction = "N", currentTime = currentTime, charged= True))
+                        laserShot.play(maxtime = 1000)
+                        self.lastShotTime = currentTime
+
         if self.immune and currentTime - self.immuneTime >= self.immuneFrames:
             self.immune = False
     def takeDamage(self, amount, currentTime, collision):

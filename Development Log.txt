@@ -117,3 +117,9 @@ mechanic instead of blocking all bullet shots.
 
 11/1/25
 Bullets, Lasers, and Enemy Death sounds have been added.
+
+11/3/25
+Lasers have been given to the player.
+
+11/5/25
+Fixed laser by giving it an afterimage that does no damage.

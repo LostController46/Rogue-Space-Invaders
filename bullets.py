@@ -22,7 +22,7 @@ class Bullet:
         self.color = color
         self.charged = charged
         self.direction = direction
-    def update(self, paused):
+    def update(self, currentTime, paused):
         if paused:
             return
         dx = 0
@@ -42,13 +42,14 @@ class Bullet:
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, self.color, self.rect)
 class Laser(Bullet):
-    def __init__(self, gunRect, width = 10, height = config.SCREEN_HEIGHT, speed = 1, damage = 2, color=(25,255,0), direction = "N", duration = 1000, currentTime = None):
+    def __init__(self, gunRect, width = 10, height = config.SCREEN_HEIGHT, speed = 1, damage = 2, color=(25,255,0), direction = "N", duration = 1000, currentTime = None, charged = True):
         self.gunRect = gunRect
         self.width = width
         self.speed = speed
         self.damage = damage
         self.rect = pygame.Rect(0, 0, width, height)
         self.color = color
+        self.charged = charged
         self.direction = direction
         now = pygame.time.get_ticks() if currentTime is None else currentTime
         self.spawnTime = now
@@ -64,7 +65,8 @@ class Laser(Bullet):
             self.rect.height = config.SCREEN_HEIGHT - self.rect.top
         elif self.direction == "N":
             self.rect.bottom = self.gunRect.top
-            self.rect.height = self.rect.bottom
+            self.rect.top = 0
+            self.rect.height = self.gunRect.top
     def update(self, currentTime, paused):
         if paused:
             return
@@ -78,3 +80,34 @@ class Laser(Bullet):
             self.expired = True
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, self.color, self.rect)
+class LaserAfterimage(Laser):
+    def __init__ (self, originalLaser, duration = 500, charged = False):
+        self.rect = originalLaser.rect.copy()
+        self.color = originalLaser.color
+        self.direction = originalLaser.direction
+        self.charged = charged
+        self.drift = 2
+        self.timer = duration
+        self.spawnTime = pygame.time.get_ticks()
+        self.velocity = 0
+        self.damage = 0
+        self.alpha = 255
+    def update(self, currentTime, paused):
+        if paused:
+            return
+        elapsed = currentTime - self.spawnTime
+        remaining = max(0, self.timer - elapsed)
+        self.timer = remaining
+        if remaining <= 0:
+            self.alpha = 0
+        else:
+            self.alpha = int(255 * (self.timer / 3000))
+        if self.direction == "N":
+            self.rect.y -= self.drift
+        elif self.direction == "S":
+            self.rect.y += self.drift
+    def draw(self, gameScreen):
+        #Give laser a transparent surface and apply the alpha
+        surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        surf.fill((*self.color, self.alpha))
+        gameScreen.blit(surf, self.rect)

@@ -303,9 +303,19 @@ def gameplay():
     gamer.update(key, currentTime, paused)
     #Update bullets
     for shot in bullet[:]:
-            shot.update(paused)
+        if isinstance(shot, bullets.LaserAfterimage):
+            shot.update(currentTime, paused)
+            if shot.timer <= 0:
+                bullet.remove(shot)
+        elif isinstance(shot, bullets.Laser):
+            shot.update(currentTime, paused)
+            if shot.expired:
+                bullet.remove(shot)
+        else:
+            shot.update(currentTime, paused)
             if shot.rect.bottom < 0:
                 bullet.remove(shot)
+
 
     #Update enemies & bosses
     for enemy in enemies[:]:
@@ -323,8 +333,9 @@ def gameplay():
     #Enemy & bosses gets hit by a bullet
     for enemy in enemies[:]:
         for shot in bullet[:]:
-            if enemy.rect.colliderect(shot.rect):
-                bullet.remove(shot)
+            if enemy.rect.colliderect(shot.rect) and not isinstance(shot, bullets.LaserAfterimage):
+                if isinstance(shot, bullets.Laser):
+                    bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                 if isinstance(enemy, attackers.Blocker):
                     if shot.charged:
                         enemy.takeDamage(gamer.chargeShotDamage, gamer, charged=shot.charged)
@@ -332,6 +343,7 @@ def gameplay():
                         enemy.takeDamage(shot.damage, gamer)
                 else:
                     enemy.health -= shot.damage
+                bullet.remove(shot)
                 if enemy.health <= 0:
                     if isinstance(enemy, attackers.Combustion):
                         enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
@@ -402,8 +414,9 @@ def gameplay():
             if isinstance(enemyBull, bullets.Laser):
                 enemyBull.update(currentTime, paused)
             else:
-                enemyBull.update(paused)
+                enemyBull.update(currentTime, paused)
         if getattr(enemyBull, "expired", False):
+            enemyBullets.append(bullets.LaserAfterimage(enemyBull, duration= 3000, charged = False))
             enemyBullets.remove(enemyBull)
             continue
         if enemyBull.rect.top > SCREEN_HEIGHT or enemyBull.rect.bottom < 0 or enemyBull.rect.right < 0 or enemyBull.rect.left > SCREEN_WIDTH:
@@ -794,6 +807,8 @@ while run:
                                 gamer.cash -= cost
                                 selectedUpgrade["LVL"] += 1
                                 gamer.updateStats()
+                                if selectedUpgrade["name"] == "Laser Upgrade" and "Laser" not in gamer.weaponList:
+                                    gamer.weaponList.append("Laser")
 
                         #Sabotages Purchase
                         elif col == 2:
@@ -841,8 +856,12 @@ while run:
     #Charge Shot Charging Code
     if gamer.charging:
         if not paused:
-            chargeDuration = currentTime - gamer.chargingStart
-            progress = min(chargeDuration / bullets.maxChargeTime, 1.0)
+            if gamer.currentWeapon == "Bullet":
+                chargeDuration = currentTime - gamer.chargingStart
+                progress = min(chargeDuration / gamer.chargingSpeed, 1.0)
+            elif gamer.currentWeapon == "Laser":
+                chargeDuration = currentTime - gamer.chargingStart
+                progress = min(chargeDuration / gamer.laserChargeSpeed, 1.0)
 
         barWidth = gamer.rect.width
         barHeight = 8
