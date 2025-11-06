@@ -122,4 +122,8 @@ Bullets, Lasers, and Enemy Death sounds have been added.
 Lasers have been given to the player.
 
 11/5/25
-Fixed laser by giving it an afterimage that does no damage.
+Fixed laser by giving it an afterimage that does no damage. Finished work on Missiles, two bullets
+that home in on the first enemy in the list.
+
+11/6/25
+Update shop logic and Weapons are visible in HUD.

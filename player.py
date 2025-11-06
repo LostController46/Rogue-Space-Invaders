@@ -29,10 +29,14 @@ class Player():
                 "bulletDamage": damage,
                 "chargeShotDamage" : damage * 2,
                 "laserDamage": 4,
+                "missileDamage": 2,
                 "shotDelay": 300,                     #The lower it is the faster the firing speed
                 "chargingSpeed": 1000,                #The lower it is the faster the charge
                 "laserChargeSpeed": 3000,             #The lower it is the faster the charge speed
                 "laserCooldown": 1300,                #The lower it is the faster the cooldown
+                "missileCooldown": 2000,              #The lower it is the faster the cooldown
+                "missileDuration": 7000,              #The high it is the longer the missiles last
+                "missileSpeed": 10,
                 "exploit": 0,                         #Increases damage enemies take
             },
             "extra": 
@@ -66,6 +70,7 @@ class Player():
         self.bulletDamage = damage
         self.chargeShotDamage = damage * 2
         self.laserDamage = 4
+        self.missileDamage = 2
         #Extra Stats
         self.speed = speed
         self.luck = 0
@@ -87,6 +92,9 @@ class Player():
         self.chargingStart = 0
         self.laserChargeSpeed = 3000
         self.laserCooldown = 1300
+        self.missileCooldown = 2000
+        self.missileDuration = 7000
+        self.missileSpeed = 10
         self.currentWeaponIndex = 0  #Bullet is weapon 0
         self.bulletList = bulletList
         self.weaponList = ["Bullet"]
@@ -142,7 +150,7 @@ class Player():
                 "maxLevel": 3,
                 "cost": 50,
                 "type": "missileDamage",
-                "description": "Increases damage of missiles. NOT IMPLEMENTED"
+                "description": "Increases damage of missiles."
             }]
         #Sabotage Upgrades
         self.saboUpgrades = [
@@ -187,7 +195,7 @@ class Player():
                 "description": "Increases the worth of enemies."
             }]
 
-    def update(self, key, currentTime, paused):
+    def update(self, key, currentTime, paused, enemyList = None):
         #Movement for player
         self.pause = paused
         if paused:
@@ -249,7 +257,20 @@ class Player():
                         self.bulletList.append(bullets.Laser(self.rect, damage=self.laserDamage, direction = "N", currentTime = currentTime, charged= True))
                         laserShot.play(maxtime = 1000)
                         self.lastShotTime = currentTime
+        elif self.currentWeapon == "Missile":
+            if key[pygame.K_w] and currentTime - self.lastShotTime >= self.missileCooldown:
+                offset = 10
+                missileY = self.rect.top
 
+                #Left Missile
+                self.bulletList.append(bullets.Missile(self.rect.centerx - offset, missileY, enemyList, speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
+                                    color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
+
+                #Right Missile
+                self.bulletList.append(bullets.Missile(self.rect.centerx + offset, missileY, enemyList, speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
+                                    color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
+                #Add sound here
+                self.lastShotTime = currentTime
         if self.immune and currentTime - self.immuneTime >= self.immuneFrames:
             self.immune = False
     def takeDamage(self, amount, currentTime, collision):

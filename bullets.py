@@ -111,3 +111,46 @@ class LaserAfterimage(Laser):
         surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         surf.fill((*self.color, self.alpha))
         gameScreen.blit(surf, self.rect)
+class Missile(Bullet):
+    def __init__(self, x, y, targets, width = 20, height = 20, speed = 10, damage = 2, color = (255, 255, 255), duration = 10000, currentTime = None, charged = False):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.speed = speed
+        self.damage = damage
+        self.color = color
+        self.duration = duration
+        now = pygame.time.get_ticks() if currentTime is None else currentTime
+        self.spawnTime = now
+        self.expired = False
+        self.timer = now
+        self.target = targets
+        self.charged = charged
+        self.activeTime = 0
+    def updatePosition(self):
+        if not self.target:
+            return
+        target = self.target[0]
+        if not target:
+            return
+        dx = target.rect.centerx - self.rect.centerx
+        dy = target.rect.centery - self.rect.centery
+        #Normalize the vector to get more consistent speed
+        distance = (dx * dx + dy * dy) ** 0.5
+        if distance != 0:
+            dx /= distance
+            dy /= distance
+        self.rect.x += int(dx * self.speed)
+        self.rect.y += int(dy * self.speed)
+
+    def update(self, currentTime, paused):
+        if paused:
+            return
+        if currentTime < self.timer:
+            self.timer = currentTime
+        delta = currentTime - self.timer
+        self.timer = currentTime
+        self.updatePosition()
+        self.activeTime += delta
+        if self.activeTime >= self.duration:
+            self.expired = True
+    def draw(self, gameScreen):
+        pygame.draw.rect(gameScreen, self.color, self.rect)

@@ -97,12 +97,12 @@ def drawMiddleHUD(screen, player):
             partText = smallFont.render(f"{parts.name}", True, (200,200,200))
             screen.blit(partText, (xOffset + 20, yOffset))
             yOffset += space
-def drawRightHUD(screen, weapons, currentWeaponIndex):
-    hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
-    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
-    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
+def drawRightHUD(screen, weapons, currentWeapon):
+    hudRect = pygame.Rect(screen.get_width() - 200, screen.get_height() - 160, 200, 160)
+    pygame.draw.rect(screen, (50, 50, 50), hudRect)
+    pygame.draw.rect(screen, (200, 200, 200), hudRect, 2)
     for i, weapon in enumerate(weapons):
-        color = (0, 255, 0) if i == currentWeaponIndex else (200,200,200)
+        color = (0, 255, 0) if weapon == currentWeapon else (200,200,200)
         text = font.render(weapon, True, color)
         screen.blit(text, (hudRect.right - text.get_width() - 5, hudRect.y + 10 + i * 50))
 #endregion
@@ -300,7 +300,7 @@ def gameplay():
     currentTime = getGameTime()
     
     #Only update if game isn't paused.
-    gamer.update(key, currentTime, paused)
+    gamer.update(key, currentTime, paused, enemies)
     #Update bullets
     for shot in bullet[:]:
         if isinstance(shot, bullets.LaserAfterimage):
@@ -308,6 +308,10 @@ def gameplay():
             if shot.timer <= 0:
                 bullet.remove(shot)
         elif isinstance(shot, bullets.Laser):
+            shot.update(currentTime, paused)
+            if shot.expired:
+                bullet.remove(shot)
+        elif isinstance(shot, bullets.Missile):
             shot.update(currentTime, paused)
             if shot.expired:
                 bullet.remove(shot)
@@ -434,7 +438,7 @@ def gameplay():
             boss.draw(gameScreen)
     drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled)
     drawMiddleHUD(gameScreen, gamer)
-    drawRightHUD(gameScreen, ["Bullet"], gamer.currentWeapon)
+    drawRightHUD(gameScreen, gamer.weaponList, gamer.currentWeapon)
 #endregion
 def drawMap(screen):
     global mapCreated 
@@ -610,7 +614,7 @@ def drawShop(gameScreen):
         lvl = upgrade["LVL"]
         maxLvl = upgrade["maxLevel"]
         if lvl == 0:
-            cost = upgrade["cost"]
+            cost = (int) (upgrade["cost"] / 2)
         else:
             cost = upgrade["cost"] * lvl
         itemRect = pygame.Rect(shipRect.x + 5, yOffset + i * 120, shipRect.width - 10, 100)
@@ -647,7 +651,7 @@ def drawShop(gameScreen):
         lvl = upgrade["LVL"]
         maxLvl = upgrade["maxLevel"]
         if lvl == 0:
-            cost = upgrade["cost"]
+            cost = (int) (upgrade["cost"] / 2)
         else:
             cost = upgrade["cost"] * lvl
         itemRect = pygame.Rect(saboRect.x + 5, yOffset + i * 120, saboRect.width - 10, 100)
@@ -802,18 +806,28 @@ while run:
                         #Ship Purchase
                         elif col == 1: 
                             selectedUpgrade = gamer.shipUpgrades[row]
-                            cost = selectedUpgrade["cost"] * selectedUpgrade["LVL"]
+                            if selectedUpgrade["LVL"] == 0:
+                                cost = (int) (selectedUpgrade["cost"] / 2)
+                            else:
+                                cost = selectedUpgrade["cost"] * selectedUpgrade["LVL"]
                             if gamer.cash >= cost and selectedUpgrade["LVL"] < selectedUpgrade["maxLevel"]:
                                 gamer.cash -= cost
                                 selectedUpgrade["LVL"] += 1
                                 gamer.updateStats()
+                                if selectedUpgrade["name"] == "Ship Max Health":
+                                    gamer.currentHealth += 10
                                 if selectedUpgrade["name"] == "Laser Upgrade" and "Laser" not in gamer.weaponList:
                                     gamer.weaponList.append("Laser")
+                                if selectedUpgrade["name"] == "Missile Upgrade" and "Missile" not in gamer.weaponList:
+                                    gamer.weaponList.append("Missile")
 
                         #Sabotages Purchase
                         elif col == 2:
                             selectedSabo = gamer.saboUpgrades[row]
-                            cost = selectedSabo["cost"] * selectedSabo["LVL"]
+                            if selectedSabo["LVL"] == 0:
+                                cost = (int) (selectedSabo["cost"] / 2)
+                            else:
+                                cost = selectedSabo["cost"] * selectedSabo["LVL"]
                             if gamer.cash >= cost and selectedSabo["LVL"] < selectedSabo["maxLevel"]:
                                 gamer.cash -= cost
                                 selectedSabo["LVL"] += 1
