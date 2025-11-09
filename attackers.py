@@ -9,6 +9,8 @@ CHARGER_IMG = pygame.image.load("images/Charger.png")
 BLOCKER_IMG = pygame.image.load("images/Blocker.png")
 COMBUSTION_IMG = pygame.image.load("images/Combustion.png")
 
+BOSSGUN_IMG = pygame.image.load("images/BossGun.png")
+
 enemyHP = config.enemyHP
 enemySPD = config.enemySPD
 enemyDelay = config.enemyDelay
@@ -193,6 +195,7 @@ class BossShooterBlockerFusion(Boss):
         self.gunHealth = {"leftGun": 30, "rightGun": 30}
         self.gunOffset = {"leftGun": (0, 70), "rightGun": (self.rect.width - 30, 70)}
         self.guns = {gun: pygame.Rect(0,0, 30, 100) for gun in self.gunHealth}
+        self.gunImage = pygame.transform.scale(BOSSGUN_IMG, (30, 100))
         self.laserCooldown = 3000
         self.laserDuration = 1000
         self.lastLaserShot = pygame.time.get_ticks()
@@ -231,7 +234,7 @@ class BossShooterBlockerFusion(Boss):
     def fireLasers(self, enemyBullets, currentTime):        
             for gun, health in self.gunHealth.items():
                 if health > 0:
-                    laser = bullets.Laser(self.guns[gun], width = 10, height = config.SCREEN_HEIGHT, damage = self.damage, direction="S", duration=self.laserDuration, currentTime = currentTime)
+                    laser = bullets.Laser(self.guns[gun], width = 10, height = config.SCREEN_HEIGHT, color = (59, 2, 48), damage = self.damage, direction="S", duration=self.laserDuration, currentTime = currentTime)
                     enemyBullets.append(laser)
                     laserShot.play(maxtime = 1000)
 
@@ -242,7 +245,7 @@ class BossShooterBlockerFusion(Boss):
             if health > 0:
                 gunX = self.rect.x + self.gunOffset[gun][0]
                 gunY = self.rect.y + self.gunOffset[gun][1]
-                pygame.draw.rect(gameScreen, (0,0, 255), (gunX, gunY, 30, 100))
+                gameScreen.blit(self.gunImage, (gunX, gunY))
                 
     def takeDamage(self, amount, gun = None, charged=False):
         if charged:

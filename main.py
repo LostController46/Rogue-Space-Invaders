@@ -734,6 +734,9 @@ while run:
                     gamer.currentLevel += 1
                     giveReward(rewardType)
                     softReset()
+            #Debug Code for the Boss.
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_INSERT:
+                bosses.append(attackers.BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150))
         elif state == "GameOver":
             if event.type == pygame.KEYDOWN:
                 state = "MainMenu"

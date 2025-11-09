@@ -87,6 +87,7 @@ class LaserAfterimage(Laser):
         self.direction = originalLaser.direction
         self.charged = charged
         self.drift = 2
+        self.duration = duration
         self.timer = duration
         self.spawnTime = pygame.time.get_ticks()
         self.velocity = 0
@@ -96,12 +97,12 @@ class LaserAfterimage(Laser):
         if paused:
             return
         elapsed = currentTime - self.spawnTime
-        remaining = max(0, self.timer - elapsed)
+        remaining = max(0, self.duration - elapsed)
         self.timer = remaining
         if remaining <= 0:
             self.alpha = 0
         else:
-            self.alpha = int(255 * (self.timer / 3000))
+            self.alpha = int(255 * (remaining / self.duration))
         if self.direction == "N":
             self.rect.y -= self.drift
         elif self.direction == "S":

@@ -127,3 +127,6 @@ that home in on the first enemy in the list.
 
 11/6/25
 Update shop logic and Weapons are visible in HUD.
+
+11/9/25
+Added sprite for the Boss's Guns. Started work on Boss sprite outline.
