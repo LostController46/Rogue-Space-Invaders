@@ -40,6 +40,29 @@ class Enemy:
         self.rect.y += self.speed
     def draw(self, gameScreen):
         gameScreen.blit(self.image, self.rect)
+    def takeDamage(self, player, type, shot = None):
+        if shot != None:
+            charged = shot.charged
+        if type == "thorns":
+            damage = player.thornsDamage
+        elif type == "bullet":
+            if isinstance(shot, bullets.Bullet):
+                if charged:
+                    damage = player.chargeShotDamage
+                else:
+                    damage = player.bulletDamage
+            elif isinstance (shot, bullets.Laser):
+                damage = player.laserDamage
+            elif isinstance (shot, bullets.Missile):
+                damage = player.missileDamage
+        #For Blockers
+        if isinstance(self, Blocker):
+            if charged:
+                damage = damage * 2 if getattr(player, "blockerWeak", False) else damage
+            else:
+                damage = damage if getattr(player, "blockerWeak", False) else max(damage - self.reduction, 1)
+
+        self.health -= damage
 class Basic(Enemy):
     def __init__(self, x, y, width = 50 , height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1, scaling = 0):
         super().__init__(x, y, width, height, health, speed, color, damage, scaling)
@@ -121,17 +144,6 @@ class Blocker(Enemy):
             elif self.rect.left <= 0:
                 self.rect.left = 0
                 self.direction = 1
-    def takeDamage(self, damage, player, charged = False):
-        if charged:
-            if player.blockerWeak:
-                self.health -= damage * 2
-            else:
-                self.health -= damage
-        else:
-            if player.blockerWeak:
-                self.health -= damage
-            else:
-                self.health -= max(damage - self.reduction, 1)
 class Combustion(Enemy):
     def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD, scaling = 0):
         super().__init__(x, y, width, height, health, speed, color = (172, 216, 230), damage = 1, scaling = scaling)
@@ -270,5 +282,6 @@ class BossShooterBlockerFusion(Boss):
 class Asteroid(Enemy):
     def __init__(self, x, y, width = 70, height = 70, health = enemyHP * 5, speed = enemySPD, scaling = 0):
         super().__init__(x, y, width, height, health, speed, color = (100, 100, 100), damage = 0, scaling = scaling)
+        self.image = pygame.transform.scale(BOSSGUN_IMG, (100, 100))
         self.worth = 0
         self.countsTowardsKills = False

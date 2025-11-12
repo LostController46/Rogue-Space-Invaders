@@ -331,35 +331,31 @@ def gameplay():
         else:
             enemy.update(paused)
         if enemy.rect.colliderect(gamer.rect):
+            if gamer.thorns:
+                enemy.takeDamage(gamer, "thorns", None)
             gamer.takeDamage(enemy.damage, currentTime, True)
         if enemy.rect.top > SCREEN_HEIGHT:
             enemy.rect.y = -50
             enemy.rect.x = random.randint(0, SCREEN_WIDTH - enemy.rect.width)
-    #Enemy & bosses gets hit by a bullet
+    #Enemy & bosses take damage
     for enemy in enemies[:]:
+        if enemy.health <= 0:
+            if isinstance(enemy, attackers.Combustion):
+                enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
+            if gamer.basicWeak and isinstance(enemy, attackers.Basic):
+                gamer.cash += enemy.worth + 3
+            else:
+                gamer.cash += enemy.worth
+            enemies.remove(enemy)
+            enemyDeath.play()
+            if enemy.countsTowardsKills:
+                enemiesKilled += 1
         for shot in bullet[:]:
             if enemy.rect.colliderect(shot.rect) and not isinstance(shot, bullets.LaserAfterimage):
                 if isinstance(shot, bullets.Laser):
                     bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
-                if isinstance(enemy, attackers.Blocker):
-                    if shot.charged:
-                        enemy.takeDamage(gamer.chargeShotDamage, gamer, charged=shot.charged)
-                    else:
-                        enemy.takeDamage(shot.damage, gamer)
-                else:
-                    enemy.health -= shot.damage
+                enemy.takeDamage(gamer, "bullet", shot)
                 bullet.remove(shot)
-                if enemy.health <= 0:
-                    if isinstance(enemy, attackers.Combustion):
-                        enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
-                    if gamer.basicWeak and isinstance(enemy, attackers.Basic):
-                        gamer.cash += enemy.worth + 3
-                    else:
-                        gamer.cash += enemy.worth
-                    enemies.remove(enemy)
-                    enemyDeath.play()
-                    if enemy.countsTowardsKills:
-                        enemiesKilled += 1
                 break
     for boss in bosses[:]: 
         for shot in bullet[:]: 
@@ -381,12 +377,12 @@ def gameplay():
         bosses.append(boss)
         bossSpawned = True
     elif currentTime - attackers.lastSpawnTime > (attackers.enemySpawnDelay + gamer.getEnemyDelaySabo()) + gamer.jammed and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
-        if whichEvent == "asteroidsFalling":
-            enemies.append(attackers.Asteroid(enemyX, -50, scaling = gamer.currentLevel))
         groupSize = random.randint(1, 5)
         groupSize = min(groupSize, enemiesLeft - enemiesKilled, enemiesOnScreen - len(enemies))
         for _ in range(groupSize):
             enemyX = random.randint(0, SCREEN_WIDTH - 50)
+            if whichEvent == "asteroidsFalling":
+                enemies.append(attackers.Asteroid(enemyX, -50, scaling = gamer.currentLevel))
             enemyType = random.choice(spawnWhat)
             #Prepare the enemy to spawn
             if enemyType == "Basic":

@@ -30,8 +30,9 @@ class Player():
                 "chargeShotDamage" : damage * 2,
                 "laserDamage": 4,
                 "missileDamage": 2,
+                "thornsDamage": 0,
                 "shotDelay": 300,                     #The lower it is the faster the firing speed
-                "chargingSpeed": 1000,                #The lower it is the faster the charge
+                "chargingSpeed": 800,                #The lower it is the faster the charge
                 "laserChargeSpeed": 2000,             #The lower it is the faster the charge speed
                 "laserCooldown": 1300,                #The lower it is the faster the cooldown
                 "missileCooldown": 2000,              #The lower it is the faster the cooldown
@@ -43,7 +44,8 @@ class Player():
             {
                 "speed": speed,
                 "luck": 0,                            #Increases chances for rarer parts
-                "jammed": 0
+                "jammed": 0,
+                "thorns": False                     #Enemies, take damage when colliding with you.
             },
             "weaknesses":                           #Increases damage against this type of enemy
             {
@@ -71,11 +73,13 @@ class Player():
         self.chargeShotDamage = damage * 2
         self.laserDamage = 4
         self.missileDamage = 2
+        self.thornsDamage = 0
         #Extra Stats
         self.speed = speed
         self.luck = 0
         self.cash = 0
         self.jammed = 0
+        self.thorns = False
         self.parts = []
         #Exploit Enemy Weaknesses
         self.basicWeak = False
@@ -87,7 +91,7 @@ class Player():
         #Bullet & Weapons
         self.lastShotTime = 0
         self.shotDelay = 300
-        self.chargingSpeed = 1000
+        self.chargingSpeed = 800
         self.charging = False
         self.chargingStart = 0
         self.laserChargeSpeed = 2000
