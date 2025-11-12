@@ -18,7 +18,7 @@ clock = pygame.time.Clock()
 font = pygame.font.Font(None, 74)
 smallFont = pygame.font.Font(None, 50)
 enemyLeftFont = pygame.font.Font(None, 32)
-levelFont = pygame.font.Font(None, 20)
+levelFont = pygame.font.Font(None, 35)
 shopDescFont = pygame.font.Font(None, 30)
 shopFont = pygame.font.Font(None, 40)
 
@@ -110,33 +110,39 @@ def drawRightHUD(screen, weapons, currentWeapon):
 
 #region Map Logic
 #
-#       Boss
-#         |
-#        L13
-#      /     \
-#    L11     L12
-#   /  \    /   \
-#  L7  L8  L9   L10
-#   \   |   |   /
-#    L3 L4 L5 L6
-#     \ |   | /
-#      L1   L2
-#       \   /
-#       Start
+#                  __ Boss __
+#                 /    |     \
+#               L15   L16   L17
+#                 \  / |  \  /
+#                 L12 L13  L14      <-Force Large/Massive pass this point
+#                  \__ | __/
+#                ____ L11 ____      <-Forced Shop
+#               /   |  |  |   \
+#              L6 L7  L8  L9 L10
+#               \ |    |   | /
+#                L3   L4   L5
+#                 \  / \  /
+#                  L1   L2          <-Forced Basic/Shooter/Both, Small/Medium, and Part
+#                   \   /
+#                   Start
 MAP_GRAPH = {"Start": ["L1", "L2"],
              "L1":    ["L3", "L4"],
-             "L2":    ["L5", "L6"],
-             "L3":    ["L7"],
+             "L2":    ["L4", "L5"],
+             "L3":    ["L6", "L7"],
              "L4":    ["L8"],
-             "L5":    ["L9"],
-             "L6":    ["L10"],
+             "L5":    ["L9", "L10"],
+             "L6":    ["L11"],
              "L7":    ["L11"],
              "L8":    ["L11"],
-             "L9":    ["L12"],
-             "L10":   ["L12"],
-             "L11":   ["L13"],
-             "L12":   ["L13"],
-             "L13":   ["Boss"],
+             "L9":    ["L11"],
+             "L10":   ["L11"],
+             "L11":   ["L12", "L13", "L14"],
+             "L12":   ["L15", "L16"],
+             "L13":   ["L16"],
+             "L14":   ["L16", "L17"],
+             "L15":   ["Boss"],
+             "L16":   ["Boss"],
+             "L17":   ["Boss"],
              "Boss":  []
 
 }
@@ -152,6 +158,41 @@ def generateLevel():
     for node in MAP_GRAPH.keys():
         if node == "Start":
             LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Reward": None}
+        elif node == "L1" or node == "L2":
+            levelEnemies = random.sample(["Basic", "Shooter"], random.randint(1, 2))
+            eventManager.triggerRandomEvent()
+            LEVEL_DATA[node] = {
+                "Horde": random.choice(["Small", "Medium"]),
+                "Enemies": levelEnemies,
+                "Rewards": "Part",
+                "Event": eventManager.currentEvent
+            }
+        #Always has a shop
+        elif node == "L11":
+            #Prevents only Blockers from spawning
+            levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
+            if levelEnemies == ["Blocker"]:
+                levelEnemies.append("Shooter")
+            eventManager.triggerRandomEvent()
+            LEVEL_DATA[node] = {
+                "Horde": random.choice(HORDE_SIZE),
+                "Enemies": levelEnemies,
+                "Rewards": "Shop",
+                "Event": eventManager.currentEvent
+            }
+        #Always has large/massive hordes
+        elif node == "L12" or node == "L13" or node == "L14" or node == "L15" or node == "L16" or node == "L17":
+            #Prevents only Blockers from spawning
+            levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
+            if levelEnemies == ["Blocker"]:
+                levelEnemies.append("Shooter")
+            eventManager.triggerRandomEvent()
+            LEVEL_DATA[node] = {
+                "Horde": random.choice(["Large", "Massive"]),
+                "Enemies": levelEnemies,
+                "Rewards": random.choice(REWARDS),
+                "Event": eventManager.currentEvent
+            }
         elif node == "Boss":
             LEVEL_DATA[node] = {"Horde": "Massive", "Enemies": ENEMY_TYPES, "Reward": "BOSS_PART", "Event": None}
         else:
@@ -181,20 +222,24 @@ def setupMapPositions(screenWidth):
     global nodePositions
     center = screenWidth // 2
     nodePositions ={
-        "Start": (center, 700),
-        "L1":    (center - 100, 600),
-        "L2":    (center + 100, 600),
-        "L3":    (center - 350, 500),
-        "L4":    (center - 110, 500),
-        "L5":    (center + 110, 500),
-        "L6":    (center + 350, 500),
-        "L7":    (center - 330, 400),
-        "L8":    (center - 120, 400),
-        "L9":    (center + 120, 400),
-        "L10":   (center + 330, 400),
-        "L11":   (center - 150, 300),
-        "L12":   (center + 150, 300),
-        "L13":   (center, 200),
+        "Start": (center, 900),
+        "L1":    (center - 150, 800),
+        "L2":    (center + 150, 800),
+        "L3":    (center - 250, 700),
+        "L4":    (center, 700),
+        "L5":    (center + 250, 700),
+        "L6":    (center - 450, 600),
+        "L7":    (center - 250, 600),
+        "L8":    (center, 600),
+        "L9":    (center + 250, 600),
+        "L10":   (center + 450, 600),
+        "L11":   (center, 500),
+        "L12":   (center - 200, 400),
+        "L13":   (center, 400),
+        "L14":   (center + 200, 400),
+        "L15":   (center - 350, 300),
+        "L16":   (center, 300),
+        "L17":   (center + 350, 300),
         "Boss":  (center, 100)
     }
 #endregion
@@ -472,13 +517,27 @@ def drawMap(screen):
         else:
             color = (100, 100, 255)
         
-        pygame.draw.circle(screen, color, (x, y), 20)
-        pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, 2)
+        pygame.draw.circle(screen, color, (x, y), 30)
+        pygame.draw.circle(screen, (255, 255, 255), (x, y), 30, 2)
 
         #Text inside node
-        text = levelFont.render(node, True, (255, 255, 255))
-        text_rect = text.get_rect(center=(x, y))
-        screen.blit(text, text_rect)
+        if node in ("Start", "Boss"):
+            text = node
+        else:
+            levelInfo = LEVEL_DATA[node]
+            reward = levelInfo["Rewards"]
+            specialEvent = levelInfo["Event"]
+            if specialEvent == "unknownRewards":
+                text = "?"
+            elif reward == "Shop" :
+                text = "$"
+            elif reward == "Part":
+                text = "P"
+            elif reward == "Heal":
+                text = "H"
+        textSurf = levelFont.render(text, True, (255, 255, 255))
+        textRect = textSurf.get_rect(center=(x, y))
+        screen.blit(textSurf, textRect)
 
         #Horde, Enemies, Rewards below node
         if node not in ("Start", "Boss"):
@@ -494,11 +553,8 @@ def drawMap(screen):
                 if "Combustion" in enemies: symbols += "X "
             else:
                 symbols += "?"
-            if specialEvent == "unknownRewards":
-                detail = levelFont.render(f"{levelInfo['Horde']}, {symbols.strip()}, {"???"}", True, (255, 255, 0))
-            else:
-                detail = levelFont.render(f"{levelInfo['Horde']}, {symbols.strip()}, {levelInfo['Rewards']}", True, (255, 255, 0))
-            detailRect = detail.get_rect(center=(x, y + 30))
+            detail = levelFont.render(symbols.strip(), True, (255, 0, 255))
+            detailRect = detail.get_rect(center=(x, y + 45))
             screen.blit(detail, detailRect)
     if nextNodes:
         selectedNode = nextNodes[selectedLevel]

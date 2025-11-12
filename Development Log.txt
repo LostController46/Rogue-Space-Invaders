@@ -133,4 +133,5 @@ Added sprite for the Boss's Guns. Started work on Boss sprite outline.
 
 11/12/25
 Converted Basic to a subclass of Enemy. Made Missiles home in on the closest enemy. Added Asteroids
-to the random events. Unified takeDamage for all normal enemy types.
+to the random events. Unified takeDamage for all normal enemy types. Map has been extended and has
+improved logic.
