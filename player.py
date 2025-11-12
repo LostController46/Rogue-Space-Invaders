@@ -32,10 +32,10 @@ class Player():
                 "missileDamage": 2,
                 "shotDelay": 300,                     #The lower it is the faster the firing speed
                 "chargingSpeed": 1000,                #The lower it is the faster the charge
-                "laserChargeSpeed": 3000,             #The lower it is the faster the charge speed
+                "laserChargeSpeed": 2000,             #The lower it is the faster the charge speed
                 "laserCooldown": 1300,                #The lower it is the faster the cooldown
                 "missileCooldown": 2000,              #The lower it is the faster the cooldown
-                "missileDuration": 7000,              #The high it is the longer the missiles last
+                "missileDuration": 3000,              #The high it is the longer the missiles last
                 "missileSpeed": 10,
                 "exploit": 0,                         #Increases damage enemies take
             },
@@ -90,10 +90,10 @@ class Player():
         self.chargingSpeed = 1000
         self.charging = False
         self.chargingStart = 0
-        self.laserChargeSpeed = 3000
+        self.laserChargeSpeed = 2000
         self.laserCooldown = 1300
         self.missileCooldown = 2000
-        self.missileDuration = 7000
+        self.missileDuration = 3000
         self.missileSpeed = 10
         self.currentWeaponIndex = 0  #Bullet is weapon 0
         self.bulletList = bulletList
@@ -195,7 +195,7 @@ class Player():
                 "description": "Increases the worth of enemies."
             }]
 
-    def update(self, key, currentTime, paused, enemyList = None):
+    def update(self, key, currentTime, paused, enemyList = None, bossList = None):
         #Movement for player
         self.pause = paused
         if paused:
@@ -263,11 +263,11 @@ class Player():
                 missileY = self.rect.top
 
                 #Left Missile
-                self.bulletList.append(bullets.Missile(self.rect.centerx - offset, missileY, enemyList, speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
+                self.bulletList.append(bullets.Missile(self.rect.centerx - offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
 
                 #Right Missile
-                self.bulletList.append(bullets.Missile(self.rect.centerx + offset, missileY, enemyList, speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
+                self.bulletList.append(bullets.Missile(self.rect.centerx + offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
                 #Add sound here
                 self.lastShotTime = currentTime

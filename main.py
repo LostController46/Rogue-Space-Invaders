@@ -300,7 +300,7 @@ def gameplay():
     currentTime = getGameTime()
     
     #Only update if game isn't paused.
-    gamer.update(key, currentTime, paused, enemies)
+    gamer.update(key, currentTime, paused, (enemies or []) + (bosses or []))
     #Update bullets
     for shot in bullet[:]:
         if isinstance(shot, bullets.LaserAfterimage):
@@ -312,6 +312,7 @@ def gameplay():
             if shot.expired:
                 bullet.remove(shot)
         elif isinstance(shot, bullets.Missile):
+            shot.target = (enemies or []) + (bosses or [])
             shot.update(currentTime, paused)
             if shot.expired:
                 bullet.remove(shot)
@@ -351,13 +352,14 @@ def gameplay():
                 if enemy.health <= 0:
                     if isinstance(enemy, attackers.Combustion):
                         enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
-                    if gamer.basicWeak and isinstance(enemy, attackers.Enemy):
+                    if gamer.basicWeak and isinstance(enemy, attackers.Basic):
                         gamer.cash += enemy.worth + 3
                     else:
                         gamer.cash += enemy.worth
                     enemies.remove(enemy)
                     enemyDeath.play()
-                    enemiesKilled += 1
+                    if enemy.countsTowardsKills:
+                        enemiesKilled += 1
                 break
     for boss in bosses[:]: 
         for shot in bullet[:]: 
@@ -379,6 +381,8 @@ def gameplay():
         bosses.append(boss)
         bossSpawned = True
     elif currentTime - attackers.lastSpawnTime > (attackers.enemySpawnDelay + gamer.getEnemyDelaySabo()) + gamer.jammed and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
+        if whichEvent == "asteroidsFalling":
+            enemies.append(attackers.Asteroid(enemyX, -50, scaling = gamer.currentLevel))
         groupSize = random.randint(1, 5)
         groupSize = min(groupSize, enemiesLeft - enemiesKilled, enemiesOnScreen - len(enemies))
         for _ in range(groupSize):
@@ -387,7 +391,7 @@ def gameplay():
             #Prepare the enemy to spawn
             if enemyType == "Basic":
                 #The -50 for the Y makes it so the enemy spawns offscreen before being shown.
-                prepEnemy = attackers.Enemy(enemyX, -50, scaling = gamer.currentLevel)
+                prepEnemy = attackers.Basic(enemyX, -50, scaling = gamer.currentLevel)
             elif enemyType == "Shooter":
                 prepEnemy = attackers.Shooter(enemyX, -50, scaling = gamer.currentLevel)
             elif enemyType == "Charger":

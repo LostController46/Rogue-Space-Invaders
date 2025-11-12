@@ -26,20 +26,26 @@ bulletShot = pygame.mixer.Sound("sounds/enemyBulletShot.wav")
 laserShot = pygame.mixer.Sound("sounds/enemyLaserShot.wav")
 
 class Enemy:
-    def __init__(self, x, y, width = 50 , height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1, scaling = 0):
-        self.image = pygame.transform.scale(BASIC_IMG, (width, height))
-        self.rect = self.image.get_rect(topleft=(x,y))
+    def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD, color = (255, 255, 255), damage = 1, scaling = 0):
+        self.rect = pygame.Rect(x, y, width, height)
         self.speed = speed + (scaling // 4)
         self.color = color
         self.health = health + (scaling // 3)
         self.damage = damage + (scaling // 3)
         self.worth = enemyWorth
+        self.countsTowardsKills = True
     def update(self, paused):
         if paused:
             return
         self.rect.y += self.speed
     def draw(self, gameScreen):
         gameScreen.blit(self.image, self.rect)
+class Basic(Enemy):
+    def __init__(self, x, y, width = 50 , height = 50, health = enemyHP, speed = enemySPD, color = (255,0,0), damage = 1, scaling = 0):
+        super().__init__(x, y, width, height, health, speed, color, damage, scaling)
+        self.image = pygame.transform.scale(BASIC_IMG, (width, height))
+        self.rect = self.image.get_rect(topleft=(x,y))
+        self.worth = enemyWorth
 class Shooter(Enemy):
     def __init__(self, x, y, width = 60 , height = 30, health = 1, speed = enemySPD + 2, scaling = 0):
         super().__init__(x, y, width, height, health, speed, color = (255,0,255), damage = 1, scaling = scaling)
@@ -257,3 +263,12 @@ class BossShooterBlockerFusion(Boss):
             self.health -= amount
         if all(hp <= 0 for hp in self.gunHealth.values()):
             self.alive = False
+
+
+
+#Obstacles
+class Asteroid(Enemy):
+    def __init__(self, x, y, width = 70, height = 70, health = enemyHP * 5, speed = enemySPD, scaling = 0):
+        super().__init__(x, y, width, height, health, speed, color = (100, 100, 100), damage = 0, scaling = scaling)
+        self.worth = 0
+        self.countsTowardsKills = False

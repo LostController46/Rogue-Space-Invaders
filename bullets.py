@@ -81,7 +81,7 @@ class Laser(Bullet):
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, self.color, self.rect)
 class LaserAfterimage(Laser):
-    def __init__ (self, originalLaser, duration = 500, charged = False):
+    def __init__ (self, originalLaser, duration, charged = False):
         self.rect = originalLaser.rect.copy()
         self.color = originalLaser.color
         self.direction = originalLaser.direction
@@ -110,7 +110,8 @@ class LaserAfterimage(Laser):
     def draw(self, gameScreen):
         #Give laser a transparent surface and apply the alpha
         surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        surf.fill((*self.color, self.alpha))
+        print(f"DEBUG LASER COLOR: {self.color}, TYPE: {type(self.color)}, ALPHA: {self.alpha if hasattr(self, 'alpha') else 'N/A'}")
+        surf.fill((*self.color, min(255, self.alpha)))
         gameScreen.blit(surf, self.rect)
 class Missile(Bullet):
     def __init__(self, x, y, targets, width = 20, height = 20, speed = 10, damage = 2, color = (255, 255, 255), duration = 10000, currentTime = None, charged = False):
@@ -129,11 +130,19 @@ class Missile(Bullet):
     def updatePosition(self):
         if not self.target:
             return
-        target = self.target[0]
-        if not target:
+        closestTarget = None
+        closestDistance = float('inf')
+        for enemy in self.target:
+            dx = enemy.rect.centerx - self.rect.centerx
+            dy = enemy.rect.centery - self.rect.centery
+            distance = (dx * dx + dy * dy) ** 0.5
+            if distance < closestDistance:
+                closestTarget = enemy
+                closestDistance = distance
+        if not closestTarget:
             return
-        dx = target.rect.centerx - self.rect.centerx
-        dy = target.rect.centery - self.rect.centery
+        dx = closestTarget.rect.centerx - self.rect.centerx
+        dy = closestTarget.rect.centery - self.rect.centery
         #Normalize the vector to get more consistent speed
         distance = (dx * dx + dy * dy) ** 0.5
         if distance != 0:
