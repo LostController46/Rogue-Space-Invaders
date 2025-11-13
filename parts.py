@@ -54,8 +54,9 @@ legendaryParts = [Part("Legendary Booster", "Holy booster. Increases movement sp
                   Part("Charger Horns", "Stolen horns of a Charger. When enemies collide with you, they take damage as well. Reduces collision damage.", "+", ["thorns", "thornsDamage", "reduction"], [True, 3, -3], 80),
                   ]
 
-#bossParts = [Part("Laser Pointer"),
-#             Part("Charged Battery"),]
+bossParts = [Part("Laser Pointer", "Stolen laser of the Defender. Doubles laser damage.", "*", "laserDamage", 2, 0),
+             Part("Charged Battery", "Stolen battery of the Defender. Increases charging speed of lasers and bullets.", "+", ["chargingSpeed", "laserChargeSpeed"], [-150, -300], 0 ),
+             ]
 
 badParts = []
 #b.	Legendary Parts

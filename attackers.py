@@ -207,7 +207,7 @@ class Boss(Enemy):
     def draw(self, gameScreen):
         pygame.draw.rect(gameScreen, self.color, self.rect)
 
-class BossShooterBlockerFusion(Boss):
+class Defender(Boss):
     def __init__(self, x, y):
         super().__init__(x, y, width = 200, height = 150, health= 50, speed = enemySPD + 1, color = (139, 133, 137))
         self.gunHealth = {"leftGun": 30, "rightGun": 30}

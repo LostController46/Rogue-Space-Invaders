@@ -41,6 +41,13 @@ enemiesKilled = 0
 enemiesLeft = 0
 enemiesDecided = False
 enemiesOnScreen = 15
+basicSprite = pygame.image.load("images/Basic.png")
+shooterSprite = pygame.image.load("images/Shooter.png")
+chargerSprite = pygame.image.load("images/Charger.png")
+blockerSprite = pygame.image.load("images/Blocker.png")
+combustionSprite = pygame.image.load("images/Combustion.png")
+defenderSprite = pygame.image.load("images/Boss.png")
+defenderGunsSprite = pygame.image.load("images/BossGun.png")
 
 #Map Control
 mapCreated = False
@@ -85,18 +92,26 @@ def drawMiddleHUD(screen, player):
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
     pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
     text = font.render("Parts:", True, (200, 200, 200))
-    screen.blit(text, (hudRect.x + 10, hudRect.y + 30))
+    screen.blit(text, (hudRect.x + 10, hudRect.y + 20))
     xOffset = hudRect.x + 160
     yOffset = hudRect.y + 5
     space = 25
     if not player.parts:
         text = font.render("None", True, (150,150,150))
         screen.blit(text, (xOffset, yOffset + space))
-    else:
-        for parts in player.parts:
-            partText = smallFont.render(f"{parts.name}", True, (200,200,200))
-            screen.blit(partText, (xOffset + 20, yOffset))
-            yOffset += space
+        return
+    maxWidth = hudRect.width - 100
+    rowX = xOffset
+    rowY = yOffset + space
+    rowSpacing = 25
+    for parts in player.parts:
+        partSurface = smallFont.render(parts.name, True, (200, 200, 200))
+        partWidth = partSurface.get_width()
+        if rowX + partWidth > hudRect.x + 10 + maxWidth:
+            rowX = xOffset
+            rowY += rowSpacing
+        screen.blit(partSurface, (rowX, rowY))
+        rowX += partWidth + 20
 def drawRightHUD(screen, weapons, currentWeapon):
     hudRect = pygame.Rect(screen.get_width() - 200, screen.get_height() - 160, 200, 160)
     pygame.draw.rect(screen, (50, 50, 50), hudRect)
@@ -287,30 +302,68 @@ def drawMainMenu(selected):
         gameScreen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250 + i * 60))
 
 def drawHowToPlay():
+    global totalPages
     gameScreen.fill((0,0,0))
 
     title = font.render("How To Play", True, (255,255,255))
     gameScreen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
-    controls = ["Move Left/Right: A / D", "Focus Movement: Hold RCtrl", "Shoot: W",
-                "Charge Shot: Hold W & RShift, Release RShift when charged",
-                "Pause: Esc"]
-    enemyInfo = [("Basic", (255,0,0), "Moves straight down."),
-                 ("Shooter", (255,0,255), "Patrols and shoots bullets."),
-                 ("Charger", (255,165,0), "Charges towards you quickly."),
-                 ("Blocker", (128,128,128), "Patrols and can only be damaged by Charged Shots."),
-                 ("Combustion", (172,216,230), "Explodes into bullets when destroyed.")]
+    controls = ["Move Left/Right: A / D", "Focus Movement: Hold RCtrl", "Shoot: Press/Hold W",
+                "Charge Shot: Hold W & RShift, Release RShift when charged", 
+                "Confirm/Buy: Enter", "Switch Weapons: Period", "Pause: Esc"]
+    mapInfo = ["$ means there's a shop at the end of the level.",
+               "P means that the player gets a part at the end of the level.",
+               "H means that the player heals after the level.",
+               "? means unknown reward at the end of the level.",
+               "The letters underneath a level mean the enemy types that will appear."]
+    enemyInfo = [("Basic", basicSprite, "Moves straight down.", "B"),
+                 ("Shooter", shooterSprite, "Patrols and shoots bullets.", "S"),
+                 ("Charger", chargerSprite, "Charges towards you quickly.", "C"),
+                 ("Blocker", blockerSprite, "Patrols and takes less damage from normal shots.", "Bl"),
+                 ("Combustion", combustionSprite, "Explodes into bullets when destroyed.", "X"),
+                 ("Defender", defenderSprite, "Can only take damage from their guns.", "Unknown")]
+    totalPages = 2
     y = 150
-    for line in controls:
-        text = smallFont.render(line, True, (200,200,200))
+    if currentPage == 1:
+        text = font.render("Controls", True, (200, 200, 200))
         gameScreen.blit(text, (50, y))
         y += 50
-    for name, color, desc in enemyInfo:
-        pygame.draw.rect(gameScreen, color, (50, y, 40, 40))
-        text = smallFont.render(f"{name} - {desc}", True, (255,255,255))
-        gameScreen.blit(text, (100, y + 5))
+        for line in controls:
+            text = smallFont.render(line, True, (255,255,255))
+            gameScreen.blit(text, (50, y))
+            y += 50
+        y += 30
+        text = font.render("Map Information", True, (100, 100, 255))
+        gameScreen.blit(text, (50, y))
+        y += 50
+        for line in mapInfo:
+            text = smallFont.render(line, True, (255,255,255))
+            gameScreen.blit(text, (50, y))
+            y += 50
+        
+    else:
+        text = font.render("Enemy Types", True, (255,100,100))
+        gameScreen.blit(text, (50, y))
         y += 60
-    backText = smallFont.render("Press ESC to return", True, (255, 255, 0))
-    gameScreen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 100))
+        for name, sprite, desc, symbol in enemyInfo:
+            gameScreen.blit(sprite, (50, y))
+            if name == "Defender":
+                gameScreen.blit(defenderGunsSprite, (50, y + 70))
+                gameScreen.blit(defenderGunsSprite, (50 + sprite.get_width() - 30, y + 70))
+            fullText = f"{name} - Symbol: {symbol} - {desc}"
+            descRect = pygame.Rect(
+                50 + sprite.get_width() + 40,
+                y,
+                450,
+                sprite.get_height() + 40)
+            textWrapping(gameScreen,
+                fullText,
+                smallFont,
+                (255, 255, 255),
+                descRect,
+                length = 55)
+            y += sprite.get_height() + 50
+    backText = smallFont.render("Press ESC to return                Press A/D to go between pages", True, (255, 255, 0))
+    gameScreen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 75))
 #region Gameplay
 def gameplay():
     global currentTime
@@ -418,7 +471,7 @@ def gameplay():
                     bullet.remove(shot)
     #Enemy & boss spawning & which type
     if enemiesKilled >= enemiesLeft and not bossSpawned and not paused and currentNode == "Boss":
-        boss = attackers.BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150)
+        boss = attackers.Defender(SCREEN_WIDTH//2 - 75, -150)
         bosses.append(boss)
         bossSpawned = True
     elif currentTime - attackers.lastSpawnTime > (attackers.enemySpawnDelay + gamer.getEnemyDelaySabo()) + gamer.jammed and (enemiesKilled < enemiesLeft) and not paused and len(enemies) < enemiesOnScreen:
@@ -427,7 +480,7 @@ def gameplay():
         for _ in range(groupSize):
             enemyX = random.randint(0, SCREEN_WIDTH - 50)
             if whichEvent == "asteroidsFalling":
-                enemies.append(attackers.Asteroid(enemyX, -50, scaling = gamer.currentLevel))
+                enemies.append(attackers.Asteroid(enemyX, -120, scaling = gamer.currentLevel))
             enemyType = random.choice(spawnWhat)
             #Prepare the enemy to spawn
             if enemyType == "Basic":
@@ -751,6 +804,8 @@ def giveReward(rewardType):
 run = True
 selectedOption = 0
 selectedLevel = 0
+currentPage = 1
+totalPages = 0
 currentNode = "Start"
 
 while run:
@@ -792,7 +847,7 @@ while run:
                     softReset()
             #Debug Code for the Boss.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_INSERT:
-                bosses.append(attackers.BossShooterBlockerFusion(SCREEN_WIDTH//2 - 75, -150))
+                bosses.append(attackers.Defender(SCREEN_WIDTH//2 - 75, -150))
         elif state == "GameOver":
             if event.type == pygame.KEYDOWN:
                 state = "MainMenu"
@@ -805,9 +860,13 @@ while run:
                 elif event.key == pygame.K_d and nextNodes:
                     selectedLevel = (selectedLevel + 1) % len(nextNodes)
                 elif event.key == pygame.K_RETURN and nextNodes:
+                    #Debug code for parts
+                    #gamer.parts.append(parts.Part())
                     nextNode = nextNodes[selectedLevel]
                     nextLevel(nextNode)
                     state = "Gameplay"
+                elif event.key == pygame.K_DELETE:
+                    state = "MainMenu"
         elif state == "Shop":
             if finishedShopping == False:    
                 if event.type == pygame.KEYDOWN:
@@ -897,8 +956,13 @@ while run:
             else:
                 state = "Map"
                 finishedShopping = False
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_DELETE:
-            state = "MainMenu"
+        elif state == "How To Play":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
+                currentPage = min(currentPage + 1, totalPages)
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_a:
+                currentPage = max(currentPage - 1, 1)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                state = "MainMenu"
     
     #Draw screens
     if state == "MainMenu":
