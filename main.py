@@ -172,7 +172,7 @@ def generateLevel():
     REWARDS = ["Part", "Heal", "Shop"]
     for node in MAP_GRAPH.keys():
         if node == "Start":
-            LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Reward": None}
+            LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Rewards": None}
         elif node == "L1" or node == "L2":
             levelEnemies = random.sample(["Basic", "Shooter"], random.randint(1, 2))
             eventManager.triggerRandomEvent()
@@ -209,7 +209,7 @@ def generateLevel():
                 "Event": eventManager.currentEvent
             }
         elif node == "Boss":
-            LEVEL_DATA[node] = {"Horde": "Massive", "Enemies": ENEMY_TYPES, "Reward": "BOSS_PART", "Event": None}
+            LEVEL_DATA[node] = {"Horde": "Massive", "Enemies": ENEMY_TYPES, "Rewards": "BOSS_PART", "Event": None}
         else:
             #Prevents only Blockers from spawning
             levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
@@ -261,7 +261,7 @@ def setupMapPositions(screenWidth):
 
 #region Resetting Game
 def reset():
-    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode
+    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag
     bullet = []
     gamer = player.Player(bulletList = bullet)
     enemies = []
@@ -272,14 +272,20 @@ def reset():
     paused = False
     gameOverTime = None
     enemiesDecided = False
+    bossFlag = False
     currentNode = "Start"
-def softReset():
-    global enemies, enemyBullets, enemiesKilled, bosses, enemiesDecided
+def softReset(looped):
+    global enemies, enemyBullets, enemiesKilled, bosses, enemiesDecided, mapCreated, currentNode, bossFlag
     enemies = []
     enemyBullets = []
     enemiesKilled = 0
     bosses = []
     enemiesDecided = False
+    if looped:
+        mapCreated = False
+        currentNode = "Start"
+        bossFlag = False
+
 #endregion
 
 #Game States: MainMenu Gameplay, How To Play, Map
@@ -364,6 +370,20 @@ def drawHowToPlay():
             y += sprite.get_height() + 50
     backText = smallFont.render("Press ESC to return                Press A/D to go between pages", True, (255, 255, 0))
     gameScreen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 75))
+def drawEndScreen():
+    gameScreen.fill((0, 0, 0))
+
+    text = font.render("Boss Defeated!", True, (255, 255, 0))
+    gameScreen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200))
+
+    msg = smallFont.render("What would you like to do?", True, (255, 255, 255))
+    gameScreen.blit(msg, (SCREEN_WIDTH // 2 - msg.get_width() // 2, 300))
+
+    choice1 = smallFont.render("1. Continue Looping", True, (0, 255, 0))
+    choice2 = smallFont.render("2. Finish Run (Return to Menu)", True, (255, 100, 100))
+
+    gameScreen.blit(choice1, (SCREEN_WIDTH // 2 - choice1.get_width() // 2, 400))
+    gameScreen.blit(choice2, (SCREEN_WIDTH // 2 - choice2.get_width() // 2, 460))
 #region Gameplay
 def gameplay():
     global currentTime
@@ -372,6 +392,7 @@ def gameplay():
     global enemiesDecided
     global enemiesLeft
     global enemiesOnScreen
+    global bossFlag
     levelInfo = LEVEL_DATA[currentNode]
     spawnWhat = levelInfo["Enemies"]
     howLarge = levelInfo["Horde"]
@@ -534,6 +555,8 @@ def gameplay():
         if boss.alive:
             boss.update(currentTime, paused, enemyBullets)
             boss.draw(gameScreen)
+        else:
+            bossFlag = True
     drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled)
     drawMiddleHUD(gameScreen, gamer)
     drawRightHUD(gameScreen, gamer.weaponList, gamer.currentWeapon)
@@ -798,7 +821,7 @@ def giveReward(rewardType):
     elif rewardType == "Shop":
         state = "Shop"
     elif rewardType == "BOSS_PART":
-        part = random.choice(parts.commonParts)
+        part = random.choice(parts.bossParts)
         gamer.parts.append(part)
 #--Main Loop--#
 run = True
@@ -807,6 +830,7 @@ selectedLevel = 0
 currentPage = 1
 totalPages = 0
 currentNode = "Start"
+bossFlag = False
 
 while run:
     dt = clock.tick(60)
@@ -844,10 +868,15 @@ while run:
                     rewardType = LEVEL_DATA[currentNode]["Rewards"]
                     gamer.currentLevel += 1
                     giveReward(rewardType)
-                    softReset()
+                    softReset(False)
+            if bossFlag:
+                rewardType = LEVEL_DATA[currentNode]["Rewards"]
+                gamer.currentLevel += 1
+                giveReward(rewardType)
+                state = "EndScreen"
             #Debug Code for the Boss.
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_INSERT:
-                bosses.append(attackers.Defender(SCREEN_WIDTH//2 - 75, -150))
+            #if event.type == pygame.KEYDOWN and event.key == pygame.K_INSERT:
+            #    bosses.append(attackers.Defender(SCREEN_WIDTH//2 - 75, -150))
         elif state == "GameOver":
             if event.type == pygame.KEYDOWN:
                 state = "MainMenu"
@@ -867,6 +896,15 @@ while run:
                     state = "Gameplay"
                 elif event.key == pygame.K_DELETE:
                     state = "MainMenu"
+                #Debug code for Testing Boss
+                #elif event.key == pygame.K_END:
+                #    gamer.damage += 50
+                #    gamer.updateStats()
+                #    currentNode = "Boss"
+                #    nextNode = []
+                #    nextLevel(currentNode)
+                #    state = "Gameplay"
+            
         elif state == "Shop":
             if finishedShopping == False:    
                 if event.type == pygame.KEYDOWN:
@@ -963,6 +1001,14 @@ while run:
                 currentPage = max(currentPage - 1, 1)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 state = "MainMenu"
+        elif state == "EndScreen":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    softReset(True)
+                    state = "Map"
+                elif event.key == pygame.K_2:
+                    reset()
+                    state = "MainMenu"
     
     #Draw screens
     if state == "MainMenu":
@@ -989,6 +1035,8 @@ while run:
             reset()
             state = "MainMenu"
             pygame.display.flip()
+    elif state == "EndScreen":
+        drawEndScreen()
 
     #Charge Shot Charging Code
     if gamer.charging:

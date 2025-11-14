@@ -138,3 +138,7 @@ improved logic.
 
 11/13/25
 Fixed How To Play Page, Added some Parts, and updated Parts display. Renamed the Boss to Defender.
+
+11/14/25
+Added Finished Game Logic. Players can choose to end the game or go for another loop. The player
+keeps their level, so the enemies can keep scaling.

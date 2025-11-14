@@ -110,7 +110,7 @@ class LaserAfterimage(Laser):
     def draw(self, gameScreen):
         #Give laser a transparent surface and apply the alpha
         surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        print(f"DEBUG LASER COLOR: {self.color}, TYPE: {type(self.color)}, ALPHA: {self.alpha if hasattr(self, 'alpha') else 'N/A'}")
+        #print(f"DEBUG LASER COLOR: {self.color}, TYPE: {type(self.color)}, ALPHA: {self.alpha if hasattr(self, 'alpha') else 'N/A'}")
         surf.fill((*self.color, min(255, self.alpha)))
         gameScreen.blit(surf, self.rect)
 class Missile(Bullet):
