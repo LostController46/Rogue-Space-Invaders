@@ -26,10 +26,10 @@ class Part:
               setattr(player, self.stat, self.value)
         elif self.buffType == "+":
                 setattr(player, self.stat, currentValue + self.value)
-                print(f" -> {self.stat}: {currentValue} -> {currentValue + self.value}")
+                #print(f" -> {self.stat}: {currentValue} -> {currentValue + self.value}")
         elif self.buffType == "*":
                 setattr(player, self.stat, currentValue * self.value)
-                print(f" -> {self.stat}: {currentValue} -> {currentValue * self.value}")
+                #print(f" -> {self.stat}: {currentValue} -> {currentValue * self.value}")
 
 commonParts = [Part("Old Booster", "It may be old, but it gets the job done. Increases movement speed.", "+", "speed", 5, 5),
                Part("Mechanical Gear", "The gears move faster. Increases fire rate.", "+", "shotDelay", -20, 15),
