@@ -8,6 +8,7 @@ PLAYER_IMG = pygame.image.load("images/player.png")
 pygame.mixer.init()
 bulletShot = pygame.mixer.Sound("sounds/bulletShot.wav")
 laserShot = pygame.mixer.Sound("sounds/laserShot.wav")
+missileShot = pygame.mixer.Sound("sounds/missileShot.wav")
 
 class Player():
     def __init__(self, x = 640, y = 700, health = 20, speed = 15, damage = 1, bulletList = []):
@@ -101,7 +102,7 @@ class Player():
         self.missileSpeed = 10
         self.currentWeaponIndex = 0  #Bullet is weapon 0
         self.bulletList = bulletList
-        self.weaponList = ["Bullet"]
+        self.weaponList = ["Bullet", "Missile"]
         self.currentWeapon = self.weaponList[self.currentWeaponIndex]
         self.lastWeaponSwitchTime = 0
         #Currently Paused
@@ -273,7 +274,7 @@ class Player():
                 #Right Missile
                 self.bulletList.append(bullets.Missile(self.rect.centerx + offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
-                #Add sound here
+                missileShot.play(maxtime = 1500)
                 self.lastShotTime = currentTime
         if self.immune and currentTime - self.immuneTime >= self.immuneFrames:
             self.immune = False

@@ -142,3 +142,7 @@ Fixed How To Play Page, Added some Parts, and updated Parts display. Renamed the
 11/14/25
 Added Finished Game Logic. Players can choose to end the game or go for another loop. The player
 keeps their level, so the enemies can keep scaling.
+
+11/15/25
+Finished Defender sprite. Finished Asteroids sprite. Changed Asteroids health. Added Missile sound
+effect.

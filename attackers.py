@@ -8,8 +8,9 @@ SHOOTER_IMG = pygame.image.load("images/Shooter.png")
 CHARGER_IMG = pygame.image.load("images/Charger.png")
 BLOCKER_IMG = pygame.image.load("images/Blocker.png")
 COMBUSTION_IMG = pygame.image.load("images/Combustion.png")
-
+DEFENDER_IMG = pygame.image.load("images/Boss.png")
 BOSSGUN_IMG = pygame.image.load("images/BossGun.png")
+ASTEROID_IMG = pygame.image.load("images/Asteroid.png")
 
 enemyHP = config.enemyHP
 enemySPD = config.enemySPD
@@ -205,11 +206,13 @@ class Boss(Enemy):
                 self.rect.left = 0
                 self.direction = 1
     def draw(self, gameScreen):
-        pygame.draw.rect(gameScreen, self.color, self.rect)
+        gameScreen.blit(self.image, self.rect)
 
 class Defender(Boss):
     def __init__(self, x, y):
         super().__init__(x, y, width = 200, height = 150, health= 50, speed = enemySPD + 1, color = (139, 133, 137))
+        self.image = pygame.transform.scale(DEFENDER_IMG, (200, 150))
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.gunHealth = {"leftGun": 50, "rightGun": 50}
         self.gunOffset = {"leftGun": (0, 70), "rightGun": (self.rect.width - 30, 70)}
         self.guns = {gun: pygame.Rect(0,0, 30, 100) for gun in self.gunHealth}
@@ -280,8 +283,16 @@ class Defender(Boss):
 
 #Obstacles
 class Asteroid(Enemy):
-    def __init__(self, x, y, width = 70, height = 70, health = enemyHP * 5, speed = enemySPD, scaling = 0):
+    def __init__(self, x, y, width = 70, height = 70, health = 3, speed = enemySPD, scaling = 0):
         super().__init__(x, y, width, height, health, speed, color = (100, 100, 100), damage = 0, scaling = scaling)
-        self.image = pygame.transform.scale(BOSSGUN_IMG, (100, 100))
+        self.image = pygame.transform.scale(ASTEROID_IMG, (100, 100))
+        self.rotatedImage = self.image
+        self.rect = self.image.get_rect(topleft=(x,y))
         self.worth = 0
+        self.angle = 0
         self.countsTowardsKills = False
+    def update(self, paused):
+        super().update(paused)
+        self.angle = (self.angle + 1) % 360
+        self.image = pygame.transform.rotate(self.rotatedImage, self.angle)
+        self.rect = self.image.get_rect(center = self.rect.center)
