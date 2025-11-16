@@ -47,15 +47,7 @@ class Enemy:
         if type == "thorns":
             damage = player.thornsDamage
         elif type == "bullet":
-            if isinstance(shot, bullets.Bullet):
-                if charged:
-                    damage = player.chargeShotDamage
-                else:
-                    damage = player.bulletDamage
-            elif isinstance (shot, bullets.Laser):
-                damage = player.laserDamage
-            elif isinstance (shot, bullets.Missile):
-                damage = player.missileDamage
+            damage = shot.damage
         #For Blockers
         if isinstance(self, Blocker):
             if charged:
@@ -100,9 +92,14 @@ class Shooter(Enemy):
             #Only shoots when the player is near enough with some variance
             if player and abs(self.rect.centerx - player.rect.centerx) < 50 + random.randint(-50,0):
                 if currentTime - self.lastShot >= self.cooldown:
-                    enemyBullets.append(bullets.Bullet(self.rect.centerx - 5, self.rect.bottom, 10, 20, 6, self.damage, 
-                                               (255, 255, 0), direction = "S"))
-                    bulletShot.play(maxtime = 500)
+                    if player.shooterWeak:
+                        toShotOrNot = random.random() < 0.33
+                    else:
+                        toShotOrNot = True
+                    if toShotOrNot:
+                        enemyBullets.append(bullets.Bullet(self.rect.centerx - 5, self.rect.bottom, 10, 20, 6, self.damage, 
+                                                (255, 255, 0), direction = "S"))
+                        bulletShot.play(maxtime = 500)
                     self.lastShot = currentTime
 class Charger(Enemy):
     def __init__(self, x, y, width = 40, height = 50, health = enemyHP + 1, speed = enemySPD + 4, scaling = 0):
@@ -118,8 +115,12 @@ class Charger(Enemy):
         distance = (dx * dx + dy * dy) ** 0.5
         if distance != 0:
             dx /= distance
-        self.rect.x += int(dx * self.speed)
-        self.rect.y += self.speed - 1
+        if player.chargerWeak:
+            self.rect.x += int(dx * (self.speed / 2))
+            self.rect.y += self.speed - 1
+        else:
+            self.rect.x += int(dx * self.speed)
+            self.rect.y += self.speed - 1
 class Blocker(Enemy):
     def __init__(self, x, y, width = 70, height = 50, health = enemyHP * 4, speed = enemySPD, scaling = 0):
         super().__init__(x, y, width, height, health, speed, color = (128, 128, 128), damage = 0, scaling = scaling)

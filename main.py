@@ -459,13 +459,19 @@ def gameplay():
     #Enemy & bosses take damage
     for enemy in enemies[:]:
         if enemy.health <= 0:
-            if isinstance(enemy, attackers.Combustion):
-                enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
             if gamer.basicWeak and isinstance(enemy, attackers.Basic):
                 gamer.cash += enemy.worth + 3
             else:
                 gamer.cash += enemy.worth
-            enemies.remove(enemy)
+            if gamer.lifesteal:
+                gamer.currentHealth += gamer.regain
+                if gamer.currentHealth >= gamer.maxHealth:
+                    gamer.currentHealth = gamer.maxHealth
+            if isinstance(enemy, attackers.Combustion):
+                enemy.onDeath(enemyBullets, gamer.combustionWeak, bullet)
+                enemies.remove(enemy)
+            else:
+                enemies.remove(enemy)
             enemyDeath.play()
             if enemy.countsTowardsKills:
                 enemiesKilled += 1
@@ -875,8 +881,8 @@ while run:
                 giveReward(rewardType)
                 state = "EndScreen"
             #Debug Code for the Boss.
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_INSERT:
-                bosses.append(attackers.Defender(SCREEN_WIDTH//2 - 75, -150))
+            #if event.type == pygame.KEYDOWN and event.key == pygame.K_INSERT:
+            #    bosses.append(attackers.Defender(SCREEN_WIDTH//2 - 75, -150))
         elif state == "GameOver":
             if event.type == pygame.KEYDOWN:
                 state = "MainMenu"

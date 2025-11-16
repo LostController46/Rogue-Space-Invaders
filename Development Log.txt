@@ -146,3 +146,6 @@ keeps their level, so the enemies can keep scaling.
 11/15/25
 Finished Defender sprite. Finished Asteroids sprite. Changed Asteroids health. Added Missile sound
 effect.
+
+11/16/25
+Added the last set of parts and fixed damage bug.

@@ -39,14 +39,15 @@ class Player():
                 "missileCooldown": 2000,              #The lower it is the faster the cooldown
                 "missileDuration": 3000,              #The high it is the longer the missiles last
                 "missileSpeed": 10,
-                "exploit": 0,                         #Increases damage enemies take
+                "dualLauncher": False,
             },
             "extra": 
             {
                 "speed": speed,
                 "luck": 0,                            #Increases chances for rarer parts
                 "jammed": 0,
-                "thorns": False                     #Enemies, take damage when colliding with you.
+                "thorns": False,                     #Enemies, take damage when colliding with you.
+                "lifesteal": False
             },
             "weaknesses":                           #Increases damage against this type of enemy
             {
@@ -78,9 +79,10 @@ class Player():
         #Extra Stats
         self.speed = speed
         self.luck = 0
-        self.cash = 0
+        self.cash = 500
         self.jammed = 0
         self.thorns = False
+        self.lifesteal = False
         self.parts = []
         #Exploit Enemy Weaknesses
         self.basicWeak = False
@@ -100,6 +102,7 @@ class Player():
         self.missileCooldown = 2000
         self.missileDuration = 3000
         self.missileSpeed = 10
+        self.dualLauncher = False
         self.currentWeaponIndex = 0  #Bullet is weapon 0
         self.bulletList = bulletList
         self.weaponList = ["Bullet", "Missile"]
@@ -107,9 +110,6 @@ class Player():
         self.lastWeaponSwitchTime = 0
         #Currently Paused
         self.pause = False
-        #Upgrades
-        self.partAdditions = 0
-        self.partMulti = 0.0
         #Shop Upgrades
         self.shipUpgrades = [
             {
@@ -235,7 +235,7 @@ class Player():
                 chargedShotY = self.rect.top
                 if fullyCharged:
                     self.bulletList.append(bullets.Bullet(chargedShotX, chargedShotY, bullets.bulletWidth, bullets.bulletHeight, 
-                                        bullets.chargedShotSPD, self.chargeShotDamage + self.damage, color=(235, 180, 52), 
+                                        bullets.chargedShotSPD, (self.chargeShotDamage + self.damage), color=(235, 180, 52), 
                                         direction = "N", charged=True))
                     self.lastShotTime = currentTime
             #Normal shot
@@ -243,7 +243,7 @@ class Player():
                 bulletX = self.rect.centerx - bullets.bulletWidth
                 bulletY = self.rect.top
                 self.bulletList.append(bullets.Bullet(bulletX, bulletY, bullets.bulletWidth, bullets.bulletHeight, 
-                                    bullets.bulletSPD, self.bulletDamage + self.damage, color=(255,255,255), direction = "N"))
+                                    bullets.bulletSPD, (self.bulletDamage + self.damage), color=(255,255,255), direction = "N"))
                 bulletShot.play(maxtime = 500)
                 self.lastShotTime = currentTime
         elif self.currentWeapon == "Laser":
@@ -259,7 +259,7 @@ class Player():
                     fullyCharged = chargeDuration >= self.laserChargeSpeed
                     #print("Released laser key", chargeDuration, fullyCharged)
                     if fullyCharged and currentTime - self.lastShotTime >= self.laserCooldown:
-                        self.bulletList.append(bullets.Laser(self.rect, damage=self.laserDamage, direction = "N", currentTime = currentTime, charged= True))
+                        self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", currentTime = currentTime, charged= True))
                         laserShot.play(maxtime = 1000)
                         self.lastShotTime = currentTime
         elif self.currentWeapon == "Missile":
@@ -268,11 +268,18 @@ class Player():
                 missileY = self.rect.top
 
                 #Left Missile
-                self.bulletList.append(bullets.Missile(self.rect.centerx - offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
+                self.bulletList.append(bullets.Missile(self.rect.centerx - offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
-
+                #Extra Missiles
+                if self.dualLauncher:
+                    self.bulletList.append(bullets.Missile(self.rect.centerx - (offset * 2), missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
+                                    color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
                 #Right Missile
-                self.bulletList.append(bullets.Missile(self.rect.centerx + offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=self.missileDamage + self.damage, 
+                self.bulletList.append(bullets.Missile(self.rect.centerx + offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
+                                    color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
+                #Extra Missiles
+                if self.dualLauncher:
+                    self.bulletList.append(bullets.Missile(self.rect.centerx + (offset * 2), missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
                 missileShot.play(maxtime = 1500)
                 self.lastShotTime = currentTime
@@ -322,7 +329,15 @@ class Player():
                 elif statName == "speed":
                     self.speed += 0.5 * (lvl - 1)
                 elif statName == "bulletDamage":
-                    self.bulletDamage += 1 * (lvl - 1)
+                    self.bulletDamage += (lvl - 1)
+                elif statName == "laserDamage":
+                    self.laserDamage += lvl
+                elif statName == "missileDamage":
+                    self.missileDamage += lvl
+        print("RESET bulletDamage =", self.bulletDamage)
+        print("RESET laserDamage =", self.laserDamage)
+        print("RESET missileDamage =", self.missileDamage)
+        print("RESET damage =", self.damage)
         #Apply stats from Parts
         for part in self.parts:
             part.upgrade(self)
