@@ -519,10 +519,41 @@ def drawMap(gameScreen, font, mapCreated, currentNode, selectedLevel):
             detailRect = detail.get_rect(center=(x, y + 45))
             gameScreen.blit(detail, detailRect)
     if nextNodes:
+        if selectedLevel >= len(nextNodes):
+            selectedLevel = 0
+        elif selectedLevel < 0:
+            selectedLevel = 0
         selectedNode = nextNodes[selectedLevel]
         pos = nodePositions[selectedNode]
         pygame.draw.circle(gameScreen, (255, 0, 0), pos, 26, 3)
     return mapCreated, LEVEL_DATA, currentNode, selectedNode, nodePositions, selectedLevel
+#endregion
+
+#region Reward
+def drawReward(gameScreen, rewardText, font, font2, rewardBackground = None):
+    if rewardBackground:
+        gameScreen.blit(rewardBackground, (0,0))
+    overlay = pygame.Surface((gameScreen.get_width(), gameScreen.get_height()), flags=pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 150))
+    gameScreen.blit(overlay, (0, 0))
+    text = font.render(rewardText, True, (255, 255, 255))
+    rect = text.get_rect(center=(gameScreen.get_width() // 2, 300))
+    gameScreen.blit(text, rect)
+    continueText = font2.render("Press SPACE to continue", True, (220, 220, 220))
+    continueRect = continueText.get_rect(center=(gameScreen.get_width() // 2, 420))
+    gameScreen.blit(continueText, continueRect)
+#endregion
+
+#region Game Over
+def drawGameOver(gameScreen):
+    gameOverFont = pygame.font.Font(None, 120)
+    gameOverText = gameOverFont.render("GAME OVER", True, (255,255,255))
+    textRect = gameOverText.get_rect(center=(gameScreen.get_width()//2, gameScreen.get_height()//2))
+    gameScreen.blit(gameOverText, textRect)
+    overlay = pygame.Surface((gameScreen.get_width(), gameScreen.get_height()), flags=pygame.SRCALPHA)
+    overlay.fill((0,0,0,150))
+    gameScreen.blit(overlay, (0,0))
+    gameScreen.blit(gameOverText, textRect)
 #endregion
 
 #region Endgame

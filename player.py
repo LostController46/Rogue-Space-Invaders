@@ -79,7 +79,7 @@ class Player():
         #Extra Stats
         self.speed = speed
         self.luck = 0
-        self.cash = 5
+        self.cash = 500
         self.jammed = 0
         self.thorns = False
         self.lifesteal = False

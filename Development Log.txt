@@ -151,4 +151,5 @@ effect.
 Added the last set of parts and fixed damage bug.
 
 11/17/25
-Fixed some bugs and made a separate file for draw functions.
+Fixed some bugs and made a separate file for draw functions. Added a screen that shows what reward
+you got after a level ends.

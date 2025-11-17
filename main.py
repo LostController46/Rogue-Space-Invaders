@@ -285,7 +285,11 @@ def gameplay():
 #endregion
 
 def giveReward(rewardType):
-    global state
+    global state, rewardText
+    global rewardBackground
+    rewardBackground= gameScreen.copy()
+    rewardText = ""
+    
     if rewardType == "Part":
         #Have a base of 60% for common and 40% for rare
         #Luck skews the odds to be 30% for common and 70% for rare with 60 luck
@@ -298,18 +302,22 @@ def giveReward(rewardType):
             part = random.choice(parts.rareParts)
         gamer.partCollected(part)
         ##Debug code: print(f"You got: {part}!")
-        state = "Map"
+        rewardText = f"You got: {part.name}!"
+        state = "Reward"
     elif rewardType == "Heal":
         healAmount = 10
         gamer.currentHealth = gamer.currentHealth + healAmount
         if gamer.currentHealth > gamer.maxHealth:
             gamer.currentHealth = gamer.maxHealth
-        state = "Map"
+        rewardText = "You were healed!"
+        state = "Reward"
     elif rewardType == "Shop":
-        state = "Shop"
+        rewardText = "You found a Shop!"
+        state = "Reward"
     elif rewardType == "BOSS_PART":
         part = random.choice(parts.bossParts)
         gamer.parts.append(part)
+        rewardText = f"You stole {part.name} from the Boss!"
 #--Main Loop--#
 run = True
 selectedOption = 0
@@ -482,6 +490,12 @@ while run:
             else:
                 state = "Map"
                 finishedShopping = False
+        elif state == "Reward":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                if rewardText == "You found a Shop!":
+                    state = "Shop"
+                else:
+                    state = "Map"
         elif state == "How To Play":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
                 currentPage = min(currentPage + 1, totalPages)
@@ -511,16 +525,10 @@ while run:
         shopPartsDecided, shopParts = visualize.drawShop(gameScreen, gamer, font, smallFont, 
                                                          enemiesLeft, enemiesKilled, enemyLeftFont, 
                                                          currentShopSelection, shopDescFont, shopFont, shopPartsDecided, shopParts)
+    elif state == "Reward":
+        visualize.drawReward(gameScreen, rewardText, font, smallFont, rewardBackground)
     elif state == "GameOver":
-        gameOverFont = pygame.font.Font(None, 120)
-        gameOverText = gameOverFont.render("GAME OVER", True, (255,255,255))
-        textRect = gameOverText.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-        gameScreen.blit(gameOverText, textRect)
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.SRCALPHA)
-        overlay.fill((0,0,0,150))
-        gameScreen.blit(overlay, (0,0))
-        gameScreen.blit(gameOverText, textRect)
-        pygame.display.flip()
+        visualize.drawGameOver(gameScreen)
         if pygame.time.get_ticks() - gameOverTime > 3000:
             reset()
             state = "MainMenu"
