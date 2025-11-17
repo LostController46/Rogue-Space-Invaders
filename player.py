@@ -79,7 +79,7 @@ class Player():
         #Extra Stats
         self.speed = speed
         self.luck = 0
-        self.cash = 500
+        self.cash = 5
         self.jammed = 0
         self.thorns = False
         self.lifesteal = False
@@ -105,7 +105,7 @@ class Player():
         self.dualLauncher = False
         self.currentWeaponIndex = 0  #Bullet is weapon 0
         self.bulletList = bulletList
-        self.weaponList = ["Bullet", "Missile"]
+        self.weaponList = ["Bullet"]
         self.currentWeapon = self.weaponList[self.currentWeaponIndex]
         self.lastWeaponSwitchTime = 0
         #Currently Paused
@@ -334,10 +334,10 @@ class Player():
                     self.laserDamage += lvl
                 elif statName == "missileDamage":
                     self.missileDamage += lvl
-        print("RESET bulletDamage =", self.bulletDamage)
-        print("RESET laserDamage =", self.laserDamage)
-        print("RESET missileDamage =", self.missileDamage)
-        print("RESET damage =", self.damage)
+        #print("RESET bulletDamage =", self.bulletDamage)
+        #print("RESET laserDamage =", self.laserDamage)
+        #print("RESET missileDamage =", self.missileDamage)
+        #print("RESET damage =", self.damage)
         #Apply stats from Parts
         for part in self.parts:
             part.upgrade(self)

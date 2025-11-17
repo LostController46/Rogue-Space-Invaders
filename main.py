@@ -4,8 +4,8 @@ import player
 import bullets
 import attackers
 import parts
-import textwrap
 import events
+import visualize
 
 pygame.init()
 
@@ -15,6 +15,8 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE
 gameScreen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Rogue Space Invaders")
 clock = pygame.time.Clock()
+
+#Fonts
 font = pygame.font.Font(None, 74)
 smallFont = pygame.font.Font(None, 50)
 enemyLeftFont = pygame.font.Font(None, 32)
@@ -41,13 +43,6 @@ enemiesKilled = 0
 enemiesLeft = 0
 enemiesDecided = False
 enemiesOnScreen = 15
-basicSprite = pygame.image.load("images/Basic.png")
-shooterSprite = pygame.image.load("images/Shooter.png")
-chargerSprite = pygame.image.load("images/Charger.png")
-blockerSprite = pygame.image.load("images/Blocker.png")
-combustionSprite = pygame.image.load("images/Combustion.png")
-defenderSprite = pygame.image.load("images/Boss.png")
-defenderGunsSprite = pygame.image.load("images/BossGun.png")
 
 #Map Control
 mapCreated = False
@@ -69,61 +64,7 @@ def getGameTime():
     if paused and pauseStartTime is not None:
         return pauseStartTime - pausedTimeAccumulated
     return pygame.time.get_ticks() - pausedTimeAccumulated
-#region HUD
-def drawLeftHUD(gameScreen, health, cash, level, enemiesLeft, enemiesKilled):
-    hudRect = pygame.Rect(0, gameScreen.get_height() - 160, 200, 160)
-    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
-    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
-    textHealth = smallFont.render(f"HP: {health}", True, (255, 0, 0))
-    textCash = smallFont.render(f"Cash: {cash}", True, (255, 255, 0))
-    textLevel = smallFont.render(f"Level: {level}", True, (0, 255, 0))
-    gameScreen.blit(textHealth, (hudRect.x + 5, hudRect.y + 10))
-    gameScreen.blit(textCash, (hudRect.x + 5, hudRect.y + 60))
-    gameScreen.blit(textLevel, (hudRect.x + 5, hudRect.y + 110))
-    #Enemy HUD
-    enemiesRemain = enemiesLeft - enemiesKilled
-    enemyHudRect = pygame.Rect(0, 0, 200, 50)
-    pygame.draw.rect(gameScreen, (50, 50, 50), enemyHudRect)
-    pygame.draw.rect(gameScreen, (200, 200, 200), enemyHudRect, 2)
-    textEnemiesLeft = enemyLeftFont.render(f"Enemies Left: {enemiesRemain}", True, (255, 255, 255))
-    gameScreen.blit(textEnemiesLeft, (enemyHudRect.x + 5, enemyHudRect.y + 10))
-def drawMiddleHUD(screen, player):
-    hudRect = pygame.Rect(200, screen.get_height() - 160, 960, 160)
-    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
-    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
-    text = font.render("Parts:", True, (200, 200, 200))
-    screen.blit(text, (hudRect.x + 10, hudRect.y + 20))
-    xOffset = hudRect.x + 160
-    yOffset = hudRect.y + 5
-    space = 25
-    if not player.parts:
-        text = font.render("None", True, (150,150,150))
-        screen.blit(text, (xOffset, yOffset + space))
-        return
-    maxWidth = hudRect.width - 100
-    rowX = xOffset
-    rowY = yOffset + space
-    rowSpacing = 25
-    for parts in player.parts:
-        partSurface = smallFont.render(parts.name, True, (200, 200, 200))
-        partWidth = partSurface.get_width()
-        if rowX + partWidth > hudRect.x + 10 + maxWidth:
-            rowX = xOffset
-            rowY += rowSpacing
-        screen.blit(partSurface, (rowX, rowY))
-        rowX += partWidth + 20
-def drawRightHUD(screen, weapons, currentWeapon):
-    hudRect = pygame.Rect(screen.get_width() - 200, screen.get_height() - 160, 200, 160)
-    pygame.draw.rect(screen, (50, 50, 50), hudRect)
-    pygame.draw.rect(screen, (200, 200, 200), hudRect, 2)
-    for i, weapon in enumerate(weapons):
-        color = (0, 255, 0) if weapon == currentWeapon else (200,200,200)
-        text = font.render(weapon, True, color)
-        screen.blit(text, (hudRect.right - text.get_width() - 5, hudRect.y + 10 + i * 50))
-#endregion
 
-
-#region Map Logic
 #
 #                  __ Boss __
 #                 /    |     \
@@ -294,96 +235,6 @@ selectedOption = 0
 menuOptions = ["Start Game", "How To Play", "Quit"]
 paused = False
 
-def drawMainMenu(selected):
-    gameScreen.fill((0,0,0))
-
-    #Title Screen
-    title = font.render("Rogue Space Invaders", True, (255,255,255))
-    gameScreen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
-
-    #Options
-    for i, option in enumerate(menuOptions):
-        color = (255, 255, 0) if i == selected else (255, 255, 255)
-        text = smallFont.render(option, True, color)
-        gameScreen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250 + i * 60))
-
-def drawHowToPlay():
-    global totalPages
-    gameScreen.fill((0,0,0))
-
-    title = font.render("How To Play", True, (255,255,255))
-    gameScreen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
-    controls = ["Move Left/Right: A / D", "Focus Movement: Hold RCtrl", "Shoot: Press/Hold W",
-                "Charge Shot: Hold W & RShift, Release RShift when charged", 
-                "Confirm/Buy: Enter", "Switch Weapons: Period", "Pause: Esc"]
-    mapInfo = ["$ means there's a shop at the end of the level.",
-               "P means that the player gets a part at the end of the level.",
-               "H means that the player heals after the level.",
-               "? means unknown reward at the end of the level.",
-               "The letters underneath a level mean the enemy types that will appear."]
-    enemyInfo = [("Basic", basicSprite, "Moves straight down.", "B"),
-                 ("Shooter", shooterSprite, "Patrols and shoots bullets.", "S"),
-                 ("Charger", chargerSprite, "Charges towards you quickly.", "C"),
-                 ("Blocker", blockerSprite, "Patrols and takes less damage from normal shots.", "Bl"),
-                 ("Combustion", combustionSprite, "Explodes into bullets when destroyed.", "X"),
-                 ("Defender", defenderSprite, "Can only take damage from their guns.", "Unknown")]
-    totalPages = 2
-    y = 150
-    if currentPage == 1:
-        text = font.render("Controls", True, (200, 200, 200))
-        gameScreen.blit(text, (50, y))
-        y += 50
-        for line in controls:
-            text = smallFont.render(line, True, (255,255,255))
-            gameScreen.blit(text, (50, y))
-            y += 50
-        y += 30
-        text = font.render("Map Information", True, (100, 100, 255))
-        gameScreen.blit(text, (50, y))
-        y += 50
-        for line in mapInfo:
-            text = smallFont.render(line, True, (255,255,255))
-            gameScreen.blit(text, (50, y))
-            y += 50
-        
-    else:
-        text = font.render("Enemy Types", True, (255,100,100))
-        gameScreen.blit(text, (50, y))
-        y += 60
-        for name, sprite, desc, symbol in enemyInfo:
-            gameScreen.blit(sprite, (50, y))
-            if name == "Defender":
-                gameScreen.blit(defenderGunsSprite, (50, y + 70))
-                gameScreen.blit(defenderGunsSprite, (50 + sprite.get_width() - 30, y + 70))
-            fullText = f"{name} - Symbol: {symbol} - {desc}"
-            descRect = pygame.Rect(
-                50 + sprite.get_width() + 40,
-                y,
-                450,
-                sprite.get_height() + 40)
-            textWrapping(gameScreen,
-                fullText,
-                smallFont,
-                (255, 255, 255),
-                descRect,
-                length = 55)
-            y += sprite.get_height() + 50
-    backText = smallFont.render("Press ESC to return                Press A/D to go between pages", True, (255, 255, 0))
-    gameScreen.blit(backText, (SCREEN_WIDTH // 2 - backText.get_width() // 2, SCREEN_HEIGHT - 75))
-def drawEndScreen():
-    gameScreen.fill((0, 0, 0))
-
-    text = font.render("Boss Defeated!", True, (255, 255, 0))
-    gameScreen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200))
-
-    msg = smallFont.render("What would you like to do?", True, (255, 255, 255))
-    gameScreen.blit(msg, (SCREEN_WIDTH // 2 - msg.get_width() // 2, 300))
-
-    choice1 = smallFont.render("1. Continue Looping", True, (0, 255, 0))
-    choice2 = smallFont.render("2. Finish Run (Return to Menu)", True, (255, 100, 100))
-
-    gameScreen.blit(choice1, (SCREEN_WIDTH // 2 - choice1.get_width() // 2, 400))
-    gameScreen.blit(choice2, (SCREEN_WIDTH // 2 - choice2.get_width() // 2, 460))
 #region Gameplay
 def gameplay():
     global currentTime
@@ -563,245 +414,10 @@ def gameplay():
             boss.draw(gameScreen)
         else:
             bossFlag = True
-    drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled)
-    drawMiddleHUD(gameScreen, gamer)
-    drawRightHUD(gameScreen, gamer.weaponList, gamer.currentWeapon)
+    visualize.drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled, smallFont, enemyLeftFont)
+    visualize.drawMiddleHUD(gameScreen, gamer, font, smallFont)
+    visualize.drawRightHUD(gameScreen, gamer.weaponList, gamer.currentWeapon, font)
 #endregion
-def drawMap(screen):
-    global mapCreated 
-    
-    #Clear the screen when loaded
-    gameScreen.fill((0,0,0))
-
-    #Creates the levels first time created
-    if not mapCreated:
-        generateLevel()
-        setupMapPositions(screen.get_width())
-        mapCreated = True
-
-    #Connects nodes together
-    for node, connections in MAP_GRAPH.items():
-        for next in connections:
-            pygame.draw.line(screen, (200,200,200), nodePositions[node], nodePositions[next], 2)
-    
-    nextNodes = getNextLevel(currentNode)
-
-    #Gives nodes their info
-    for node, (x, y) in nodePositions.items():
-        if node == "Start":
-            color = (0, 255, 0)
-        elif node == "Boss":
-            color = (255, 0, 0)
-        elif node == currentNode:
-            color = (0, 200, 0)
-        elif node in nextNodes:
-            color = (200, 200, 0)
-        else:
-            color = (100, 100, 255)
-        
-        pygame.draw.circle(screen, color, (x, y), 30)
-        pygame.draw.circle(screen, (255, 255, 255), (x, y), 30, 2)
-
-        #Text inside node
-        if node in ("Start", "Boss"):
-            text = node
-        else:
-            levelInfo = LEVEL_DATA[node]
-            reward = levelInfo["Rewards"]
-            specialEvent = levelInfo["Event"]
-            if specialEvent == "unknownRewards":
-                text = "?"
-            elif reward == "Shop" :
-                text = "$"
-            elif reward == "Part":
-                text = "P"
-            elif reward == "Heal":
-                text = "H"
-        textSurf = levelFont.render(text, True, (255, 255, 255))
-        textRect = textSurf.get_rect(center=(x, y))
-        screen.blit(textSurf, textRect)
-
-        #Horde, Enemies, Rewards below node
-        if node not in ("Start", "Boss"):
-            levelInfo = LEVEL_DATA[node]
-            enemies = levelInfo["Enemies"]
-            specialEvent = levelInfo["Event"]
-            symbols = ""
-            if specialEvent != "unknownEnemies":
-                if "Basic" in enemies: symbols += "B "
-                if "Shooter" in enemies: symbols += "S "
-                if "Charger" in enemies: symbols += "C "
-                if "Blocker" in enemies: symbols += "Bl "
-                if "Combustion" in enemies: symbols += "X "
-            else:
-                symbols += "?"
-            detail = levelFont.render(symbols.strip(), True, (255, 0, 255))
-            detailRect = detail.get_rect(center=(x, y + 45))
-            screen.blit(detail, detailRect)
-    if nextNodes:
-        selectedNode = nextNodes[selectedLevel]
-        pos = nodePositions[selectedNode]
-        pygame.draw.circle(screen, (255, 0, 0), pos, 26, 3)
-def randomShopParts():
-    randomPartList = []
-    playerPartsList = {part.name for part in gamer.parts}
-    usedParts = set(playerPartsList)
-    legendaryCount = 0
-    for _ in range(5):
-        roll = random.random() + (gamer.luck / 200)
-        #Chance for common
-        if roll < 0.6:
-            part = parts.commonParts
-        #Chance for rare
-        elif roll < 0.95:
-            part = parts.rareParts
-        #Chance for legendary
-        else:
-            if legendaryCount == 0:
-                part = parts.legendaryParts
-                legendaryCount += 1
-            #If a legendary is already generated, give a rare part
-            else:
-                part = parts.rareParts
-        #Filters the parts that the player/shop has
-        available = [p for p in part if p.name not in usedParts]
-        #Just adds the first common part if nothing is available
-        if not available:
-            newPart = parts.commonParts[0]
-        else:
-            newPart = random.choice(available)
-        usedParts.add(newPart.name)
-        randomPartList.append(newPart)
-    return randomPartList
-def textWrapping(surface, text, font, color, rect, length, lineSpacing=5):
-    maxChars = length  # adjust to fit your box width
-    lines = textwrap.wrap(text, width=maxChars)
-    yOffset = rect.y + 15
-    for line in lines:
-        line_surf = font.render(line, True, color)
-        surface.blit(line_surf, (rect.x + 5, yOffset))
-        yOffset += font.get_height() + lineSpacing
-def drawShop(gameScreen):
-    drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled)
-    drawMiddleHUD(gameScreen, gamer)
-    
-    #Makes a leave prompt where the weapons would be
-    hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
-    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
-    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
-    leaveTextRect = pygame.Rect(hudRect.x + 5, hudRect.y + 5, hudRect.width - 10,  hudRect.height - 10)
-    leaveText = "Press Space to Leave"
-    textWrapping(gameScreen, leaveText, smallFont, (255, 255, 255), leaveTextRect, length = 10)
-    
-    global shopPartsDecided
-    global shopParts
-    selectedCol, selectedRow = currentShopSelection
-    selectedPart = None
-    if shopPartsDecided == False:
-        shopParts = randomShopParts()
-        shopPartsDecided = True
-
-    #Left Section: Parts
-    partsRect = pygame.Rect(0, 100, 426, 700)
-    pygame.draw.rect(gameScreen, (50, 50, 50), partsRect)
-    pygame.draw.rect(gameScreen, (235, 227, 4), partsRect, 2)
-    partDesc = pygame.Rect(0, 0, 426, 100)
-    pygame.draw.rect(gameScreen, (50, 50, 50), partDesc)
-    pygame.draw.rect(gameScreen, (235, 227, 4), partDesc, 2)
-    yOffset = 160
-    if shopParts:
-        if selectedCol == 0:
-            selectedPart = shopParts[selectedRow]
-            textWrapping(
-                gameScreen,
-                f"{selectedPart.name}: {selectedPart.desc}",
-                shopDescFont,
-                (225, 225, 225),
-                partDesc,
-                40
-            )
-        for i, part in enumerate(shopParts):
-            itemRect = pygame.Rect(partsRect.x + 5, yOffset + i * 120, partsRect.width - 10, 100)
-            if currentShopSelection == [0, i]:
-                pygame.draw.rect(gameScreen, (255, 255, 0), itemRect, 3)
-            nameText = shopFont.render(part.name, True, (255, 255, 255))
-            priceText = shopFont.render(f"${part.cost}", True, (255, 255, 0))
-            gameScreen.blit(nameText, (partsRect.x + 10, yOffset + i * 120))
-            gameScreen.blit(priceText, (partsRect.x + 10, yOffset + i * 120 + 40))
-
-    #Middle
-    shipRect = pygame.Rect(426, 100, 426, 700)
-    pygame.draw.rect(gameScreen, (50, 50, 50), shipRect)
-    pygame.draw.rect(gameScreen, (32, 183, 247), shipRect, 2)
-    shipDesc = pygame.Rect(426, 0, 426, 100)
-    pygame.draw.rect(gameScreen, (50, 50, 50), shipDesc)
-    pygame.draw.rect(gameScreen, (32, 183, 247), shipDesc, 2)
-    
-    if selectedCol == 1:
-        selectedUpgrade = gamer.shipUpgrades[selectedRow]
-        textWrapping(
-            gameScreen,
-            f"{selectedUpgrade['name']}: {selectedUpgrade['description']}",
-            shopDescFont,
-            (225, 225, 225),
-            shipDesc,
-            40
-        )
-    for i, upgrade in enumerate(gamer.shipUpgrades):
-        name = upgrade["name"]
-        lvl = upgrade["LVL"]
-        maxLvl = upgrade["maxLevel"]
-        if lvl == 0:
-            cost = (int) (upgrade["cost"] / 2)
-        else:
-            cost = upgrade["cost"] * lvl
-        itemRect = pygame.Rect(shipRect.x + 5, yOffset + i * 120, shipRect.width - 10, 100)
-        if currentShopSelection == [1, i]:
-            pygame.draw.rect(gameScreen, (32, 183, 247), itemRect, 3)
-        nameText = shopFont.render(f"{name} (Lv {lvl}/{maxLvl})", True, (255, 255, 255))
-        if lvl >= maxLvl:
-            priceText = shopFont.render("MAXED", True, (100, 255, 100))
-        else:
-            priceText = shopFont.render(f"${cost}", True, (32, 183, 247))
-        gameScreen.blit(nameText, (shipRect.x + 10, yOffset + i * 120))
-        gameScreen.blit(priceText, (shipRect.x + 10, yOffset + i * 120 + 40))
-
-    #Right
-    saboRect = pygame.Rect(852, 100, 426, 700)
-    pygame.draw.rect(gameScreen, (50, 50, 50), saboRect)
-    pygame.draw.rect(gameScreen, (208, 25, 25), saboRect, 2)
-    saboDesc = pygame.Rect(852, 0, 426, 100)
-    pygame.draw.rect(gameScreen, (50, 50, 50), saboDesc)
-    pygame.draw.rect(gameScreen, (208, 25, 25), saboDesc, 2)
-
-    if selectedCol == 2:
-        selectedSabo = gamer.saboUpgrades[selectedRow]
-        textWrapping(
-            gameScreen,
-            f"{selectedSabo['name']}: {selectedSabo['description']}",
-            shopDescFont,
-            (225, 225, 225),
-            saboDesc,
-            40
-        )
-    for i, upgrade in enumerate(gamer.saboUpgrades):
-        name = upgrade["name"]
-        lvl = upgrade["LVL"]
-        maxLvl = upgrade["maxLevel"]
-        if lvl == 0:
-            cost = (int) (upgrade["cost"] / 2)
-        else:
-            cost = upgrade["cost"] * lvl
-        itemRect = pygame.Rect(saboRect.x + 5, yOffset + i * 120, saboRect.width - 10, 100)
-        if currentShopSelection == [2, i]:
-            pygame.draw.rect(gameScreen, (208, 25, 25), itemRect, 3)
-        nameText = shopFont.render(f"{name} (Lv {lvl}/{maxLvl})", True, (255, 255, 255))
-        if lvl >= maxLvl:
-            priceText = shopFont.render("MAXED", True, (100, 255, 100))
-        else:
-            priceText = shopFont.render(f"${cost}", True, (208, 25, 25))
-        gameScreen.blit(nameText, (saboRect.x + 10, yOffset + i * 120))
-        gameScreen.blit(priceText, (saboRect.x + 10, yOffset + i * 120 + 40))
 
 def giveReward(rewardType):
     global state
@@ -1018,15 +634,17 @@ while run:
     
     #Draw screens
     if state == "MainMenu":
-        drawMainMenu(selectedOption)
+        visualize.drawMainMenu(selectedOption, gameScreen, font, smallFont, menuOptions)
     elif state == "Gameplay":
         gameplay()
     elif state == "How To Play":
-        drawHowToPlay()
+        visualize.drawHowToPlay(gameScreen, font, smallFont, currentPage,)
     elif state == "Map":
-        drawMap(gameScreen)
+        mapCreated, LEVEL_DATA, currentNode, selectedNode, nodePositions, selectedLevel = visualize.drawMap(gameScreen, levelFont, mapCreated, currentNode, selectedLevel)
     elif state == "Shop":
-        drawShop(gameScreen)
+        shopPartsDecided, shopParts = visualize.drawShop(gameScreen, gamer, font, smallFont, 
+                                                         enemiesLeft, enemiesKilled, enemyLeftFont, 
+                                                         currentShopSelection, shopDescFont, shopFont, shopPartsDecided, shopParts)
     elif state == "GameOver":
         gameOverFont = pygame.font.Font(None, 120)
         gameOverText = gameOverFont.render("GAME OVER", True, (255,255,255))
@@ -1042,7 +660,7 @@ while run:
             state = "MainMenu"
             pygame.display.flip()
     elif state == "EndScreen":
-        drawEndScreen()
+        visualize.drawEndScreen(gameScreen, font, smallFont)
 
     #Charge Shot Charging Code
     if gamer.charging:

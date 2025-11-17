@@ -93,7 +93,7 @@ class Shooter(Enemy):
             if player and abs(self.rect.centerx - player.rect.centerx) < 50 + random.randint(-50,0):
                 if currentTime - self.lastShot >= self.cooldown:
                     if player.shooterWeak:
-                        toShotOrNot = random.random() < 0.33
+                        toShotOrNot = random.random() < 0.66
                     else:
                         toShotOrNot = True
                     if toShotOrNot:
