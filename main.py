@@ -65,141 +65,6 @@ def getGameTime():
         return pauseStartTime - pausedTimeAccumulated
     return pygame.time.get_ticks() - pausedTimeAccumulated
 
-#
-#                  __ Boss __
-#                 /    |     \
-#               L15   L16   L17
-#                 \  / |  \  /
-#                 L12 L13  L14      <-Force Large/Massive pass this point
-#                  \__ | __/
-#                ____ L11 ____      <-Forced Shop
-#               /   |  |  |   \
-#              L6 L7  L8  L9 L10
-#               \ |    |   | /
-#                L3   L4   L5
-#                 \  / \  /
-#                  L1   L2          <-Forced Basic/Shooter/Both, Small/Medium, and Part
-#                   \   /
-#                   Start
-MAP_GRAPH = {"Start": ["L1", "L2"],
-             "L1":    ["L3", "L4"],
-             "L2":    ["L4", "L5"],
-             "L3":    ["L6", "L7"],
-             "L4":    ["L8"],
-             "L5":    ["L9", "L10"],
-             "L6":    ["L11"],
-             "L7":    ["L11"],
-             "L8":    ["L11"],
-             "L9":    ["L11"],
-             "L10":   ["L11"],
-             "L11":   ["L12", "L13", "L14"],
-             "L12":   ["L15", "L16"],
-             "L13":   ["L16"],
-             "L14":   ["L16", "L17"],
-             "L15":   ["Boss"],
-             "L16":   ["Boss"],
-             "L17":   ["Boss"],
-             "Boss":  []
-
-}
-
-def getNextLevel(node):
-    return MAP_GRAPH.get(node, [])
-def generateLevel():
-    global LEVEL_DATA
-    LEVEL_DATA = {}
-    HORDE_SIZE = ["Small", "Medium", "Large", "Massive"]
-    ENEMY_TYPES =["Basic", "Shooter", "Blocker", "Charger", "Combustion"]
-    REWARDS = ["Part", "Heal", "Shop"]
-    for node in MAP_GRAPH.keys():
-        if node == "Start":
-            LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Rewards": None}
-        elif node == "L1" or node == "L2":
-            levelEnemies = random.sample(["Basic", "Shooter"], random.randint(1, 2))
-            eventManager.triggerRandomEvent()
-            LEVEL_DATA[node] = {
-                "Horde": random.choice(["Small", "Medium"]),
-                "Enemies": levelEnemies,
-                "Rewards": "Part",
-                "Event": eventManager.currentEvent
-            }
-        #Always has a shop
-        elif node == "L11":
-            #Prevents only Blockers from spawning
-            levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
-            if levelEnemies == ["Blocker"]:
-                levelEnemies.append("Shooter")
-            eventManager.triggerRandomEvent()
-            LEVEL_DATA[node] = {
-                "Horde": random.choice(HORDE_SIZE),
-                "Enemies": levelEnemies,
-                "Rewards": "Shop",
-                "Event": eventManager.currentEvent
-            }
-        #Always has large/massive hordes
-        elif node == "L12" or node == "L13" or node == "L14" or node == "L15" or node == "L16" or node == "L17":
-            #Prevents only Blockers from spawning
-            levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
-            if levelEnemies == ["Blocker"]:
-                levelEnemies.append("Shooter")
-            eventManager.triggerRandomEvent()
-            LEVEL_DATA[node] = {
-                "Horde": random.choice(["Large", "Massive"]),
-                "Enemies": levelEnemies,
-                "Rewards": random.choice(REWARDS),
-                "Event": eventManager.currentEvent
-            }
-        elif node == "Boss":
-            LEVEL_DATA[node] = {"Horde": "Massive", "Enemies": ENEMY_TYPES, "Rewards": "BOSS_PART", "Event": None}
-        else:
-            #Prevents only Blockers from spawning
-            levelEnemies = random.sample(ENEMY_TYPES, random.randint(1, len(ENEMY_TYPES)))
-            if levelEnemies == ["Blocker"]:
-                levelEnemies.append("Shooter")
-            eventManager.triggerRandomEvent()
-            LEVEL_DATA[node] = {
-                "Horde": random.choice(HORDE_SIZE),
-                "Enemies": levelEnemies,
-                "Rewards": random.choice(REWARDS),
-                "Event": eventManager.currentEvent
-            }
-def loadLevel(node):
-    levelInfo = LEVEL_DATA.get(node, {})
-    #Debug Line
-    #print(f"Level {node}. Horde Size {levelInfo.get('Horde')}. Enemies {levelInfo.get('Enemies')}. Reward: {levelInfo.get('Rewards')}")
-def nextLevel(newNode):
-    global currentNode
-    global selectedLevel
-    if newNode in getNextLevel(currentNode):
-        currentNode = newNode
-        selectedLevel = 0
-        loadLevel(currentNode)
-def setupMapPositions(screenWidth):
-    global nodePositions
-    center = screenWidth // 2
-    nodePositions ={
-        "Start": (center, 900),
-        "L1":    (center - 150, 800),
-        "L2":    (center + 150, 800),
-        "L3":    (center - 250, 700),
-        "L4":    (center, 700),
-        "L5":    (center + 250, 700),
-        "L6":    (center - 450, 600),
-        "L7":    (center - 250, 600),
-        "L8":    (center, 600),
-        "L9":    (center + 250, 600),
-        "L10":   (center + 450, 600),
-        "L11":   (center, 500),
-        "L12":   (center - 200, 400),
-        "L13":   (center, 400),
-        "L14":   (center + 200, 400),
-        "L15":   (center - 350, 300),
-        "L16":   (center, 300),
-        "L17":   (center + 350, 300),
-        "Boss":  (center, 100)
-    }
-#endregion
-
 #region Resetting Game
 def reset():
     global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag
@@ -505,7 +370,7 @@ while run:
                 gameOverTime = None
         elif state == "Map":
             if event.type == pygame.KEYDOWN:
-                nextNodes = getNextLevel(currentNode)
+                nextNodes = visualize.getNextLevel(currentNode)
                 if event.key == pygame.K_a and nextNodes:
                     selectedLevel = (selectedLevel - 1) % len(nextNodes)
                 elif event.key == pygame.K_d and nextNodes:
@@ -514,7 +379,8 @@ while run:
                     #Debug code for parts
                     #gamer.parts.append(parts.Part())
                     nextNode = nextNodes[selectedLevel]
-                    nextLevel(nextNode)
+                    visualize.nextLevel(nextNode, currentNode)
+                    currentNode = nextNode
                     state = "Gameplay"
                 elif event.key == pygame.K_DELETE:
                     state = "MainMenu"

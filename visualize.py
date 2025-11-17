@@ -362,7 +362,7 @@ def generateLevel():
     REWARDS = ["Part", "Heal", "Shop"]
     for node in MAP_GRAPH.keys():
         if node == "Start":
-            LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Rewards": None}
+            LEVEL_DATA[node] = {"Horde": None, "Enemies": [], "Rewards": None, "Event": None}
         elif node == "L1" or node == "L2":
             levelEnemies = random.sample(["Basic", "Shooter"], random.randint(1, 2))
             eventManager.triggerRandomEvent()
@@ -417,13 +417,13 @@ def loadLevel(node):
     levelInfo = LEVEL_DATA.get(node, {})
     #Debug Line
     #print(f"Level {node}. Horde Size {levelInfo.get('Horde')}. Enemies {levelInfo.get('Enemies')}. Reward: {levelInfo.get('Rewards')}")
-def nextLevel(newNode):
-    global currentNode
+def nextLevel(newNode, currentNode):
     global selectedLevel
     if newNode in getNextLevel(currentNode):
         currentNode = newNode
         selectedLevel = 0
         loadLevel(currentNode)
+    return currentNode
 def setupMapPositions(screenWidth):
     global nodePositions
     center = screenWidth // 2

@@ -1,5 +1,4 @@
 import random
-import pygame
 
 class EventManager:
     def __init__(self):
