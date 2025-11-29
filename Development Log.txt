@@ -153,3 +153,6 @@ Added the last set of parts and fixed damage bug.
 11/17/25
 Fixed some bugs and made a separate file for draw functions. Added a screen that shows what reward
 you got after a level ends.
+
+11/29/25
+Added descriptions to the reward screen, added rarity to part names, and sound effects to getting hit.

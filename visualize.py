@@ -530,7 +530,7 @@ def drawMap(gameScreen, font, mapCreated, currentNode, selectedLevel):
 #endregion
 
 #region Reward
-def drawReward(gameScreen, rewardText, font, font2, rewardBackground = None):
+def drawReward(gameScreen, rewardText, rewardDesc, font, font2, rewardBackground = None):
     if rewardBackground:
         gameScreen.blit(rewardBackground, (0,0))
     overlay = pygame.Surface((gameScreen.get_width(), gameScreen.get_height()), flags=pygame.SRCALPHA)
@@ -539,8 +539,19 @@ def drawReward(gameScreen, rewardText, font, font2, rewardBackground = None):
     text = font.render(rewardText, True, (255, 255, 255))
     rect = text.get_rect(center=(gameScreen.get_width() // 2, 300))
     gameScreen.blit(text, rect)
+    descBox = gameScreen.get_width() - 200
+    descRect = pygame.Rect((gameScreen.get_width() - descBox) // 2, 360, descBox, 200)
+    textWrapping(
+        gameScreen,
+        rewardDesc,
+        font2,
+        (255, 255, 255),
+        descRect,
+        60,
+        lineSpacing=5
+    )
     continueText = font2.render("Press SPACE to continue", True, (220, 220, 220))
-    continueRect = continueText.get_rect(center=(gameScreen.get_width() // 2, 420))
+    continueRect = continueText.get_rect(center=(gameScreen.get_width() // 2, 520))
     gameScreen.blit(continueText, continueRect)
 #endregion
 

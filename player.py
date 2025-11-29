@@ -9,6 +9,8 @@ pygame.mixer.init()
 bulletShot = pygame.mixer.Sound("sounds/bulletShot.wav")
 laserShot = pygame.mixer.Sound("sounds/laserShot.wav")
 missileShot = pygame.mixer.Sound("sounds/missileShot.wav")
+playerHurt = pygame.mixer.Sound("sounds/playerHurt.wav")
+playerCollide = pygame.mixer.Sound("sounds/playerCollide.wav")
 
 class Player():
     def __init__(self, x = 640, y = 700, health = 20, speed = 15, damage = 1, bulletList = []):
@@ -79,7 +81,7 @@ class Player():
         #Extra Stats
         self.speed = speed
         self.luck = 0
-        self.cash = 500
+        self.cash = 5
         self.jammed = 0
         self.thorns = False
         self.lifesteal = False
@@ -291,8 +293,10 @@ class Player():
                 self.immune = True
                 self.immuneTime = currentTime
                 if collision:
+                    playerCollide.play(maxtime = 1000)
                     self.currentHealth -= max(1, (amount + self.reduction))
                 else:
+                    playerHurt.play(maxtime = 1000)
                     self.currentHealth -= amount
                 if self.currentHealth <= 0:
                     #If you have a life give half health back to the player

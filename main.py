@@ -285,10 +285,11 @@ def gameplay():
 #endregion
 
 def giveReward(rewardType):
-    global state, rewardText
+    global state, rewardText, rewardDesc
     global rewardBackground
     rewardBackground= gameScreen.copy()
     rewardText = ""
+    rewardDesc = ""
     
     if rewardType == "Part":
         #Have a base of 60% for common and 40% for rare
@@ -303,6 +304,7 @@ def giveReward(rewardType):
         gamer.partCollected(part)
         ##Debug code: print(f"You got: {part}!")
         rewardText = f"You got: {part.name}!"
+        rewardDesc = f"{part.desc}"
         state = "Reward"
     elif rewardType == "Heal":
         healAmount = 10
@@ -526,7 +528,7 @@ while run:
                                                          enemiesLeft, enemiesKilled, enemyLeftFont, 
                                                          currentShopSelection, shopDescFont, shopFont, shopPartsDecided, shopParts)
     elif state == "Reward":
-        visualize.drawReward(gameScreen, rewardText, font, smallFont, rewardBackground)
+        visualize.drawReward(gameScreen, rewardText, rewardDesc, font, smallFont, rewardBackground)
     elif state == "GameOver":
         visualize.drawGameOver(gameScreen)
         if pygame.time.get_ticks() - gameOverTime > 3000:
