@@ -156,3 +156,6 @@ you got after a level ends.
 
 11/29/25
 Added descriptions to the reward screen, added rarity to part names, and sound effects to getting hit.
+
+12/11/25
+Game should now be able to be downloaded by others as an executable.

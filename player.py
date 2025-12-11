@@ -1,16 +1,17 @@
+from resourceLoader import resourcePath
 import pygame
 import config
 import bullets
 
-PLAYER_IMG = pygame.image.load("images/player.png")
+PLAYER_IMG = pygame.image.load(resourcePath("images/player.png"))
 
 #Sound Control
 pygame.mixer.init()
-bulletShot = pygame.mixer.Sound("sounds/bulletShot.wav")
-laserShot = pygame.mixer.Sound("sounds/laserShot.wav")
-missileShot = pygame.mixer.Sound("sounds/missileShot.wav")
-playerHurt = pygame.mixer.Sound("sounds/playerHurt.wav")
-playerCollide = pygame.mixer.Sound("sounds/playerCollide.wav")
+bulletShot = pygame.mixer.Sound(resourcePath("sounds/bulletShot.wav"))
+laserShot = pygame.mixer.Sound(resourcePath("sounds/laserShot.wav"))
+missileShot = pygame.mixer.Sound(resourcePath("sounds/missileShot.wav"))
+playerHurt = pygame.mixer.Sound(resourcePath("sounds/playerHurt.wav"))
+playerCollide = pygame.mixer.Sound(resourcePath("sounds/playerCollide.wav"))
 
 class Player():
     def __init__(self, x = 640, y = 700, health = 20, speed = 15, damage = 1, bulletList = []):

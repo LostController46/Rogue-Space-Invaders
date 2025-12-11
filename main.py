@@ -1,3 +1,4 @@
+from resourceLoader import resourcePath
 import pygame
 import random
 import player
@@ -57,7 +58,7 @@ finishedShopping = False
 
 #Sound Control
 pygame.mixer.init()
-enemyDeath = pygame.mixer.Sound("sounds/enemyDeath.wav")
+enemyDeath = pygame.mixer.Sound(resourcePath("sounds/enemyDeath.wav"))
 
 #Game Time
 def getGameTime():

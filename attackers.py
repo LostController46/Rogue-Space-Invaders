@@ -1,16 +1,17 @@
+from resourceLoader import resourcePath
 import pygame
 import random
 import config
 import bullets
 
-BASIC_IMG = pygame.image.load("images/Basic.png")
-SHOOTER_IMG = pygame.image.load("images/Shooter.png")
-CHARGER_IMG = pygame.image.load("images/Charger.png")
-BLOCKER_IMG = pygame.image.load("images/Blocker.png")
-COMBUSTION_IMG = pygame.image.load("images/Combustion.png")
-DEFENDER_IMG = pygame.image.load("images/Boss.png")
-BOSSGUN_IMG = pygame.image.load("images/BossGun.png")
-ASTEROID_IMG = pygame.image.load("images/Asteroid.png")
+BASIC_IMG = pygame.image.load(resourcePath("images/Basic.png"))
+SHOOTER_IMG = pygame.image.load(resourcePath("images/Shooter.png"))
+CHARGER_IMG = pygame.image.load(resourcePath("images/Charger.png"))
+BLOCKER_IMG = pygame.image.load(resourcePath("images/Blocker.png"))
+COMBUSTION_IMG = pygame.image.load(resourcePath("images/Combustion.png"))
+DEFENDER_IMG = pygame.image.load(resourcePath("images/Boss.png"))
+BOSSGUN_IMG = pygame.image.load(resourcePath("images/BossGun.png"))
+ASTEROID_IMG = pygame.image.load(resourcePath("images/Asteroid.png"))
 
 enemyHP = config.enemyHP
 enemySPD = config.enemySPD
@@ -23,8 +24,8 @@ bossWorth = config.bossWorth
 
 #Sound Control
 pygame.mixer.init()
-bulletShot = pygame.mixer.Sound("sounds/enemyBulletShot.wav")
-laserShot = pygame.mixer.Sound("sounds/enemyLaserShot.wav")
+bulletShot = pygame.mixer.Sound(resourcePath("sounds/enemyBulletShot.wav"))
+laserShot = pygame.mixer.Sound(resourcePath("sounds/enemyLaserShot.wav"))
 
 class Enemy:
     def __init__(self, x, y, width = 50, height = 50, health = enemyHP, speed = enemySPD, color = (255, 255, 255), damage = 1, scaling = 0):

@@ -1,16 +1,17 @@
+from resourceLoader import resourcePath
 import pygame
 import parts
 import textwrap
 import random
 import events
 
-basicSprite = pygame.image.load("images/Basic.png")
-shooterSprite = pygame.image.load("images/Shooter.png")
-chargerSprite = pygame.image.load("images/Charger.png")
-blockerSprite = pygame.image.load("images/Blocker.png")
-combustionSprite = pygame.image.load("images/Combustion.png")
-defenderSprite = pygame.image.load("images/Boss.png")
-defenderGunsSprite = pygame.image.load("images/BossGun.png")
+basicSprite = pygame.image.load(resourcePath("images/Basic.png"))
+shooterSprite = pygame.image.load(resourcePath("images/Shooter.png"))
+chargerSprite = pygame.image.load(resourcePath("images/Charger.png"))
+blockerSprite = pygame.image.load(resourcePath("images/Blocker.png"))
+combustionSprite = pygame.image.load(resourcePath("images/Combustion.png"))
+defenderSprite = pygame.image.load(resourcePath("images/Boss.png"))
+defenderGunsSprite = pygame.image.load(resourcePath("images/BossGun.png"))
 
 def textWrapping(surface, text, font, color, rect, length, lineSpacing=5):
     maxChars = length  # adjust to fit your box width
