@@ -1,7 +1,8 @@
 
 1/5/25 - 1/??/25
 Adjusted Charger to more forgiving. Sorted Development Log.
-Made adjustments to Charger Data Sample.
+Made adjustments to Charger Data Sample. Fixed Defender to hopefully always shoot. Fixed bug where
+getting to the final level on the map made endless enemies spawn with no escape.
 
 Current Road Map
 1. Fix bugs and balance changes.

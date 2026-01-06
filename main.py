@@ -68,7 +68,7 @@ def getGameTime():
 
 #region Resetting Game
 def reset():
-    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag
+    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag, bossSpawned
     bullet = []
     gamer = player.Player(bulletList = bullet)
     enemies = []
@@ -80,9 +80,10 @@ def reset():
     gameOverTime = None
     enemiesDecided = False
     bossFlag = False
+    bossSpawned = False
     currentNode = "Start"
 def softReset(looped):
-    global enemies, enemyBullets, enemiesKilled, bosses, enemiesDecided, mapCreated, currentNode, bossFlag
+    global enemies, enemyBullets, enemiesKilled, bosses, enemiesDecided, mapCreated, currentNode, bossFlag, bossSpawned
     enemies = []
     enemyBullets = []
     enemiesKilled = 0
@@ -92,6 +93,7 @@ def softReset(looped):
         mapCreated = False
         currentNode = "Start"
         bossFlag = False
+        bossSpawned = False
 
 #endregion
 
@@ -276,7 +278,7 @@ def gameplay():
         enemyBull.draw(gameScreen)
     for boss in bosses:
         if boss.alive:
-            boss.update(currentTime, paused, enemyBullets)
+            boss.update(currentTime, paused, enemyBullets, gamer)
             boss.draw(gameScreen)
         else:
             bossFlag = True

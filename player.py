@@ -294,10 +294,14 @@ class Player():
                 self.immune = True
                 self.immuneTime = currentTime
                 if collision:
-                    playerCollide.play(maxtime = 1000)
+                    #Quick check to not play if taking no damage (After Images of Lasers)
+                    if amount > 0:
+                        playerCollide.play(maxtime = 1000)
                     self.currentHealth -= max(1, (amount + self.reduction))
                 else:
-                    playerHurt.play(maxtime = 1000)
+                    #Quick check to not play if taking no damage (After Images of Lasers)
+                    if amount > 0:
+                        playerHurt.play(maxtime = 1000)
                     self.currentHealth -= amount
                 if self.currentHealth <= 0:
                     #If you have a life give half health back to the player

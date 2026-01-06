@@ -242,30 +242,26 @@ class Defender(Boss):
         for gun, rect in self.guns.items():
             rect.x = self.rect.x + self.gunOffset[gun][0]
             rect.y = self.rect.y + self.gunOffset[gun][1]
-    def update(self, currentTime, paused, enemyBullets):
+    def update(self, currentTime, paused, enemyBullets, player):
         super().update(paused)
         if paused:
             return
-        delta = currentTime - self.timer
-        self.timer = currentTime
         if not self.movingDown:
-            if self.firingLaser:
-                self.laserActiveTime += delta
-                if self.laserActiveTime >= self.laserDuration:
-                    self.firingLaser = False
-                    self.lastLaserShot = currentTime
-                    self.laserActiveTime = 0
-            else:
-                if currentTime - self.lastLaserShot >= self.laserCooldown:
+            if player and abs(self.rect.centerx - player.rect.centerx) < config.SCREEN_WIDTH:
+                if not self.firingLaser and currentTime - self.lastLaserShot >= self.laserCooldown:
                     self.fireLasers(enemyBullets, currentTime)
                     self.firingLaser = True
-                    self.laserActiveTime = 0
+                    self.laserActiveTime = currentTime           
+            if self.firingLaser:
+                if currentTime - self.laserActiveTime >= self.laserDuration:
+                    self.firingLaser = False
+                    self.lastLaserShot = currentTime
             for gun, offset in self.gunOffset.items():
                 self.guns[gun].topleft = (self.rect.x + offset[0], self.rect.y + offset[1])
     def fireLasers(self, enemyBullets, currentTime):        
             for gun, health in self.gunHealth.items():
                 if health > 0:
-                    laser = bullets.Laser(self.guns[gun], width = 10, height = config.SCREEN_HEIGHT, color = (59, 2, 48), damage = self.damage, direction="S", duration=self.laserDuration, currentTime = currentTime)
+                    laser = bullets.Laser(self.guns[gun], width = 10, height = config.SCREEN_HEIGHT, color = (255, 50, 255), damage = self.damage, direction="S", duration=self.laserDuration, currentTime = currentTime)
                     enemyBullets.append(laser)
                     laserShot.play(maxtime = 1000)
 
