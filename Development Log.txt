@@ -1,22 +1,156 @@
-9/6/25
-Resizing the game forced the player into the middle, will correct soon.
-Added Menus before going further because it caused a lot of code to be moved around.
-Started work on the enemies.
-Need to fix player controls to add a charged shot.
 
-9/7/25
-Had a bug on how the movement of the shooter enemy. Should be fixed now.
-Learned that classes initilize the number given forever, has to be inside
-the class in order to get random numbers.
-Should have a button that lets the player slow down to get more percise movement.
-Also need to work on the shoot not working when the player is moving.
+1/5/25 - 1/??/25
+Adjusted Charger to more forgiving. Sorted Development Log.
+Made adjustments to Charger Data Sample.
 
-9/12/25
-Worked on the shooting mechanic for the Player. Fix was to make it so movement
-and the shoot are not in the same if-else branch. Added slow movement for
-more precision movement. Add a new class for bullets to make adding new
-bullets and to make the charged shot implementation easier. Add a progress
-bar for the charged shot so to see how close it is to done.
+Current Road Map
+1. Fix bugs and balance changes.
+2. Add more events into the game.
+    2a. Gamble money to double it
+    2b. Risk health to get unique rare parts
+    2c. Double dip event. Double level rewards
+3. Add new bosses into the game.
+    3a.  (Fusion of Charger & Combustion)
+    3b. The Destroyer (Fusion of Shooter & Combustion)
+    3c. The Erratic (Fusion of Basic & Blocker)
+    3d. The Swarm (Fusion of Basic & Combustion)
+4. Add a Sandbox Mode to allow all sorts of testing. Survive endless waves of enemies and bosses.
+5. Add the later maps with stronger enemy types.
+
+12/11/25
+Game should now be able to be downloaded by others as an executable. Version 1.0 release!
+
+11/29/25
+Added descriptions to the reward screen, added rarity to part names, and sound effects to getting hit.
+
+11/17/25
+Fixed some bugs and made a separate file for draw functions. Added a screen that shows what reward
+you got after a level ends.
+
+11/16/25
+Added the last set of parts and fixed damage bug.
+
+11/15/25
+Finished Defender sprite. Finished Asteroids sprite. Changed Asteroids health. Added Missile sound
+effect.
+
+11/14/25
+Added Finished Game Logic. Players can choose to end the game or go for another loop. The player
+keeps their level, so the enemies can keep scaling.
+
+11/13/25
+Fixed How To Play Page, Added some Parts, and updated Parts display. Renamed the Boss to Defender.
+
+11/12/25
+Converted Basic to a subclass of Enemy. Made Missiles home in on the closest enemy. Added Asteroids
+to the random events. Unified takeDamage for all normal enemy types. Map has been extended and has
+improved logic.
+
+11/9/25
+Added sprite for the Boss's Guns. Started work on Boss sprite outline.
+
+11/6/25
+Update shop logic and Weapons are visible in HUD.
+
+11/5/25
+Fixed laser by giving it an afterimage that does no damage. Finished work on Miss-iles, two bullets
+that home in on the first enemy in the list.
+
+11/3/25
+Lasers have been given to the player.
+
+11/1/25
+Bullets, Lasers, and Enemy Death sounds have been added.
+
+10/31/25
+Parts are now removed from the shop when bought. Reworked Blocker to have a damage reduction
+mechanic instead of blocking all bullet shots.
+
+10/30/25
+Added Rare Parts and their checks, enemy scaling, and luck mechanics for the part reward and the
+shop now randomizes the rareParts.
+
+10/25/25
+Added more sprites and updated old sprites. Added special event to the map.
+
+10/24/25
+Cleaned up the updateStats function. Added checks for the current parts. Added Sabotages to the 
+shop. Sabotages have been implemented.
+
+10/23/25
+Fixed Boss infinitely firing by giving it it's own timer instead of relying on the game's timer.
+Added missing call to shop to update stats.
+
+10/18/25
+Added basic functionality of shop for Ship upgrades. Still needs implementation of upgrading stats.
+Will add to the updateStats funciton for player.py. Placeholder code is in place for the Sabotages
+of the shop.
+
+10/17/25
+Added a group spawning mechanic for enemies. Needs to be tweaked to spawn either slower or a set 
+amount of enemies on screen. Added Shop now works in main loop. Need to remove items from shop 
+once bought. Fixed small issues with parameter changes. The Boss's laser is broken again and 
+needs to be fixed (continously shooting). Otherwise, core gameplay is now finished. 
+
+10/12/25
+Added more parameters for the player to interact with the parts mechanic better. Created and added
+funcitonality for the shop.
+
+10/11/25
+Started work on adding parts to the game. Common parts have been added to the game. Added a basic
+functionality to obtain parts and healing. HUD displays collected parts. Some checks need to be
+added to certain locations.
+
+10/5/25
+Made it so enemies now added their worth to the players's cash on death. Tweaked text size of HUD.
+Also added sprites for the Player, Basic, Shooter, and Charger. Known bug is that the other enemies 
+are currently using the Basic enemy sprite. Will be fixed once the rest of the sprites are complete.
+
+10/3/25
+Added functionality to the map. Can now traverse throughout the map and now displays actual useful
+information about the level. Map was also resized to fit all information. Level dictates what
+enemies can spawn and how many should spawn.
+
+10/2/25
+Separated most logic for game into multiple files. Main.py is now easier to read. Pause button
+now freezes time correctly for the Charged Shot, enemy spawning, and laser despawn time. Was fixed
+by subtracting the time the game was paused from the game's current time.
+
+9/28/25
+Made a working definition for how the map is created and visually looks. Added the check for when
+the player dies and a game over screen. The game also now fully resets when a new game is started.
+
+9/27/25
+Tweaked HUD to fit correctly, and added the rest of the HUD. HUD now shows Parts and Weapons. Began
+creating logic for map using a Node graph.
+
+9/26/25
+Added a HUD that shows the Health, Cash, and current level. Screen can now beresized to fit a screen. 
+
+9/25/25
+Adding pause as a parameter for everything fixed the main issue with many things moving and
+updating when it shouldn't be possible.
+
+9/21/25
+The first Boss has been fixed along with the Lasers. Fixing logic for the Laser was incredibly
+hard to make it follow who shot the bullet. Boss also takes no damage if hit on the main body,
+but does take damage from getting hit on the guns.
+
+9/20/25
+Changed Controls to a How To Play Button. Added info on controls and what enemy does what.
+Added a Pause Button, that let's you quit to main menu. Charge Shot kept charging while
+paused. Unknown fix at this time. Work started on First Boss. Is a Fusion of Shooter & 
+Blocker enemy types. Need to work on Lasers from boss and have it actually patrol correctly.
+
+9/15/25
+Began work on making a Player class to implement changes to add Health to the player,
+and damage. Player can now take damages, has immunity frames, and despawns when killed.
+
+9/14/25
+Figured out that the Bullet class needed a direction added to make it so the bullets
+have a direction they move in. This lead to fixing Shooter, how enemyBullets despawns
+bullets, and the player's bulletsafter implementing directions to the Bullet class.
+The first Boss will be worked on next time.
 
 9/13/25
 Added new enemy called the Charger. Rushes towards the player to attack them.
@@ -25,137 +159,22 @@ shots, they must be charged. Rebound the Focus and Charging Keys. Started work o
 Combustion enemy type, had an issue with the bullets only moving down. Unknown fix at
 this time.
 
-9/14/25
-Figured out that the Bullet class needed a direction added to make it so the bullets
-have a direction they move in. This lead to fixing Shooter, how enemyBullets despawns
-bullets, and the player's bulletsafter implementing directions to the Bullet class.
-The first Boss will be worked on next time.
+9/12/25
+Worked on the shooting mechanic for the Player. Fix was to make it so movement
+and the shoot are not in the same if-else branch. Added slow movement for
+more precision movement. Add a new class for bullets to make adding new
+bullets and to make the charged shot implementation easier. Add a progress
+bar for the charged shot so to see how close it is to done.
 
-9/15/25
-Began work on making a Player class to implement changes to add Health to the player,
-and damage. Player can now take damages, has immunity frames, and despawns when killed.
+9/7/25
+Had a bug on how the movement of the shooter enemy. Should be fixed now.
+Learned that classes initilize the number given forever, has to be inside
+the class in order to get random numbers.
+Should have a button that lets the player slow down to get more percise movement.
+Also need to work on the shoot not working when the player is moving.
 
-9/20/25
-Changed Controls to a How To Play Button. Added info on controls and what enemy does what.
-Added a Pause Button, that let's you quit to main menu. Charge Shot kept charging while
-paused. Unknown fix at this time. Work started on First Boss. Is a Fusion of Shooter & 
-Blocker enemy types. Need to work on Lasers from boss and have it actually patrol correctly.
-
-9/21/25
-The first Boss has been fixed along with the Lasers. Fixing logic for the Laser was incredibly
-hard to make it follow who shot the bullet. Boss also takes no damage if hit on the main body,
-but does take damage from getting hit on the guns.
-
-9/25/25
-Adding pause as a parameter for everything fixed the main issue with many things moving and
-updating when it shouldn't be possible.
-
-9/26/25
-Added a HUD that shows the Health, Cash, and current level. Screen can now beresized to fit a screen. 
-
-9/27/25
-Tweaked HUD to fit correctly, and added the rest of the HUD. HUD now shows Parts and Weapons. Began
-creating logic for map using a Node graph.
-
-9/28/25
-Made a working definition for how the map is created and visually looks. Added the check for when
-the player dies and a game over screen. The game also now fully resets when a new game is started.
-
-10/2/25
-Separated most logic for game into multiple files. Main.py is now easier to read. Pause button
-now freezes time correctly for the Charged Shot, enemy spawning, and laser despawn time. Was fixed
-by subtracting the time the game was paused from the game's current time.
-
-10/3/25
-Added functionality to the map. Can now traverse throughout the map and now displays actual useful
-information about the level. Map was also resized to fit all information. Level dictates what
-enemies can spawn and how many should spawn.
-
-10/5/25
-Made it so enemies now added their worth to the players's cash on death. Tweaked text size of HUD.
-Also added sprites for the Player, Basic, Shooter, and Charger. Known bug is that the other enemies 
-are currently using the Basic enemy sprite. Will be fixed once the rest of the sprites are complete.
-
-10/11/25
-Started work on adding parts to the game. Common parts have been added to the game. Added a basic
-functionality to obtain parts and healing. HUD displays collected parts. Some checks need to be
-added to certain locations.
-
-10/12/25
-Added more parameters for the player to interact with the parts mechanic better. Created and added
-funcitonality for the shop.
-
-10/17/25
-Added a group spawning mechanic for enemies. Needs to be tweaked to spawn either slower or a set 
-amount of enemies on screen. Added Shop now works in main loop. Need to remove items from shop 
-once bought. Fixed small issues with parameter changes. The Boss's laser is broken again and 
-needs to be fixed (continously shooting). Otherwise, core gameplay is now finished. 
-
-10/18/25
-Added basic functionality of shop for Ship upgrades. Still needs implementation of upgrading stats.
-Will add to the updateStats funciton for player.py. Placeholder code is in place for the Sabotages
-of the shop.
-
-10/23/25
-Fixed Boss infinitely firing by giving it it's own timer instead of relying on the game's timer.
-Added missing call to shop to update stats.
-
-10/24/25
-Cleaned up the updateStats function. Added checks for the current parts. Added Sabotages to the 
-shop. Sabotages have been implemented.
-
-10/25/25
-Added more sprites and updated old sprites. Added special event to the map.
-
-10/30/25
-Added Rare Parts and their checks, enemy scaling, and luck mechanics for the part reward and the
-shop now randomizes the rareParts.
-
-10/31/25
-Parts are now removed from the shop when bought. Reworked Blocker to have a damage reduction
-mechanic instead of blocking all bullet shots.
-
-11/1/25
-Bullets, Lasers, and Enemy Death sounds have been added.
-
-11/3/25
-Lasers have been given to the player.
-
-11/5/25
-Fixed laser by giving it an afterimage that does no damage. Finished work on Miss-iles, two bullets
-that home in on the first enemy in the list.
-
-11/6/25
-Update shop logic and Weapons are visible in HUD.
-
-11/9/25
-Added sprite for the Boss's Guns. Started work on Boss sprite outline.
-
-11/12/25
-Converted Basic to a subclass of Enemy. Made Missiles home in on the closest enemy. Added Asteroids
-to the random events. Unified takeDamage for all normal enemy types. Map has been extended and has
-improved logic.
-
-11/13/25
-Fixed How To Play Page, Added some Parts, and updated Parts display. Renamed the Boss to Defender.
-
-11/14/25
-Added Finished Game Logic. Players can choose to end the game or go for another loop. The player
-keeps their level, so the enemies can keep scaling.
-
-11/15/25
-Finished Defender sprite. Finished Asteroids sprite. Changed Asteroids health. Added Missile sound
-effect.
-
-11/16/25
-Added the last set of parts and fixed damage bug.
-
-11/17/25
-Fixed some bugs and made a separate file for draw functions. Added a screen that shows what reward
-you got after a level ends.
-
-11/29/25
-Added descriptions to the reward screen, added rarity to part names, and sound effects to getting hit.
-
-12/11/25
-Game should now be able to be downloaded by others as an executable.
+9/6/25
+Resizing the game forced the player into the middle, will correct soon.
+Added Menus before going further because it caused a lot of code to be moved around.
+Started work on the enemies.
+Need to fix player controls to add a charged shot.

@@ -107,17 +107,25 @@ class Charger(Enemy):
         super().__init__(x, y, width, height, health, speed, color = (255,165,0), damage = 2, scaling = scaling)
         self.image = pygame.transform.scale(CHARGER_IMG, (width, height))
         self.rect = self.image.get_rect(topleft=(x,y))
+        self.lastDX = 0
     def update(self, player, paused):
         if paused:
             return
+        
+        focusLostY = 500 if player.chargerWeak else 600
         dx = player.rect.centerx - self.rect.centerx
         dy = player.rect.centery - self.rect.centery
         #Normalize the vector to get more consistent speed
         distance = (dx * dx + dy * dy) ** 0.5
         if distance != 0:
             dx /= distance
-        if player.chargerWeak:
-            self.rect.x += int(dx * (self.speed / 2))
+
+        if self.rect.y < focusLostY:
+            self.lastDX = dx
+        
+        #Charger loses focus after this point
+        if self.rect.y >= focusLostY:
+            self.rect.x += int(self.lastDX * self.speed)
             self.rect.y += self.speed - 1
         else:
             self.rect.x += int(dx * self.speed)

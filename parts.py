@@ -54,7 +54,7 @@ rareParts = [Part("[R] Warp Drive", "We're going beyond space. Greatly increases
              Part("[R] Combustion Data Sample", "Data of Combustion's weaknesses. Hijack Combustion bullets.", "+", "combustionWeak", True, 40),
              Part("[R] Basic Data Sample", "Data of Basic's weaknesses. Increases worth of Basics.", "+", "basicWeak", True, 60),
              Part("[R] Atomic Destabilizer", "Your very being feels unstable. Increases immunity frames.", "+", "immuneFrames", 300, 50),           #works
-             Part("[R] Charger Data Sample", "Data of Charger's weaknesses. Decreases Charger's movement speed.", "+", "chargerWeak", True, 40),            #Works
+             Part("[R] Charger Data Sample", "Data of Charger's weaknesses. Decreases Charger's focus range.", "+", "chargerWeak", True, 40),            #Works
              Part("[R] Quad Launcher", "Double the power. Adds another set of missiles per shot.", "+", ["dualLauncher", "missileDamage"], [True, -1], 35),      #Works
              Part("[R] Extra 3D Printer", "Now you can print all sorts of things. Decreases missile cooldown.", "+", "missileCooldown", -300, 60),      #Works
              ] 
