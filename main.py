@@ -58,7 +58,8 @@ currentShopSelection = [0,0]
 finishedShopping = False
 
 #Sandbox Control
-selectedSandboxPart = 11
+selectedSandboxPart = 0
+totalParts = parts.commonParts + parts.rareParts + parts.legendaryParts + parts.bossParts
 
 #Sound Control
 pygame.mixer.init()
@@ -98,7 +99,13 @@ def softReset(looped):
         currentNode = "Start"
         bossFlag = False
         bossSpawned = False
-
+def quitToMainMenu():
+    global state, paused, pausedStartTime, pausedTimeAccumulated
+    reset()
+    state = "MainMenu"
+    paused = False
+    pausedStartTime = None
+    pausedTimeAccumulated = 0
 #endregion
 
 #Game States: MainMenu Gameplay, How To Play, Map
@@ -371,11 +378,7 @@ while run:
                         pausedTimeAccumulated += pygame.time.get_ticks() - pauseStartTime
                         pauseStartTime = None
                 elif event.key == pygame.K_q and paused:
-                    reset()
-                    state = "MainMenu"
-                    paused = False
-                    pausedStartTime = None
-                    pausedTimeAccumulated = 0
+                    quitToMainMenu()
             if enemiesKilled >= enemiesLeft:
                 if currentNode != "Boss" or (currentNode == "Boss" and not bosses):
                     rewardType = LEVEL_DATA[currentNode]["Rewards"]
@@ -521,6 +524,16 @@ while run:
                 currentPage = max(currentPage - 1, 1)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 state = "MainMenu"
+        elif state == "Sandbox":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_d:
+                    selectedSandboxPart = (selectedSandboxPart + 1) % len(totalParts)
+                elif event.key == pygame.K_a:
+                    selectedSandboxPart = (selectedSandboxPart - 1) % len(totalParts)
+                if event.key == pygame.K_RETURN:
+                    gamer.parts.append(totalParts[selectedSandboxPart])
+                if event.key == pygame.K_q:
+                    quitToMainMenu()
         elif state == "EndScreen":
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
@@ -546,7 +559,6 @@ while run:
     elif state == "Reward":
         visualize.drawReward(gameScreen, rewardText, rewardDesc, font, smallFont, rewardBackground)
     elif state == "Sandbox":
-        totalParts = parts.commonParts + parts.rareParts + parts.legendaryParts + parts.bossParts
         visualize.drawSandboxPartsSelection(gameScreen, font, smallFont, totalParts, selectedSandboxPart, gamer)
     elif state == "GameOver":
         visualize.drawGameOver(gameScreen)

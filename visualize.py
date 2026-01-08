@@ -126,7 +126,7 @@ def drawLeftHUD(gameScreen, health, cash, level, enemiesLeft, enemiesKilled, fon
     gameScreen.blit(textEnemiesLeft, (enemyHudRect.x + 5, enemyHudRect.y + 10))
 
 def drawMiddleHUD(screen, player, font, font2):
-    hudRect = pygame.Rect(200, screen.get_height() - 160, 960, 160)
+    hudRect = pygame.Rect(200, screen.get_height() - 160, 880, 160)
     pygame.draw.rect(screen, (50, 50, 50), hudRect)
     pygame.draw.rect(screen, (200, 200, 200), hudRect, 2)
     text = font.render("Parts:", True, (200, 200, 200))
@@ -591,24 +591,35 @@ def drawEndScreen(gameScreen, font, font2):
 #region Sandbox
 def drawSandboxPartsSelection(gameScreen, font, font2, totalPartsList, selectedPart, player):
     gameScreen.fill((0,0,0))
-
+    drawLeftHUD(gameScreen, player.currentHealth, player.cash, player.currentLevel, 0, 0, font2, font2)
+    
     #Information Text
+    textRect = pygame.Rect(0,0, gameScreen.get_width(), gameScreen.get_height() - 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), textRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), textRect, 2)
     text = font2.render("Choose your parts. Can choose multiple of the same parts.", True, (255, 255, 255))
-    gameScreen.blit(text, (gameScreen.get_width() // 2 - text.get_width() // 2, 100))
+    gameScreen.blit(text, (gameScreen.get_width() // 2 - text.get_width() // 2, 50))
     help = font2.render("Use A/D to move through the list of parts. Enter to add them.", True, (255, 255, 255))
-    gameScreen.blit(help, (gameScreen.get_width() // 2 - text.get_width() // 2, 200))
+    gameScreen.blit(help, (gameScreen.get_width() // 2 - help.get_width() // 2, 100))
 
     #Part Text
     currentPart = totalPartsList[selectedPart]
     nameText = font2.render(currentPart.name, True, (255, 255, 255))
-    gameScreen.blit(nameText, (gameScreen.get_width() // 2 - text.get_width() // 2, 300))
-    descText = font2.render(currentPart.desc, True, (255, 255, 255))
-    gameScreen.blit(descText, (gameScreen.get_width() // 2 - text.get_width() // 2, 400))
-    #implement textwraping
+    gameScreen.blit(nameText, (gameScreen.get_width() // 2 - nameText.get_width() // 2, 225))
+    descRect = pygame.Rect(150, 450, 880, 400)
+    textWrapping(gameScreen, f"{currentPart.desc}", font2, (255, 255, 255), descRect, length = 60)
 
     drawMiddleHUD(gameScreen, player, font, font2)
     #Exit Text
     exit = font.render("Use A/D to move through the list of parts.", True, (255, 255, 255))
-    gameScreen.blit(exit, (gameScreen.get_width() // 2 - text.get_width() // 2, 700))
+    gameScreen.blit(exit, (gameScreen.get_width() // 2 - exit.get_width() // 2, 725))
+
+    #Makes a leave prompt where the weapons would be
+    hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
+    leaveTextRect = pygame.Rect(hudRect.x + 5, hudRect.y + 5, hudRect.width - 10,  hudRect.height - 10)
+    leaveText = "Press Space to Leave"
+    textWrapping(gameScreen, leaveText, font2, (255, 255, 255), leaveTextRect, length = 10)
 
 #def drawSandboxEnemySelection():
