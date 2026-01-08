@@ -10,9 +10,10 @@ import visualize
 
 pygame.init()
 
+PCInfo = pygame.display.Info()
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 960
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+screen = pygame.display.set_mode((PCInfo.current_w, PCInfo.current_h), pygame.RESIZABLE)
 gameScreen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Rogue Space Invaders")
 clock = pygame.time.Clock()
@@ -55,6 +56,9 @@ shopPartsDecided = False
 shopParts = []
 currentShopSelection = [0,0]
 finishedShopping = False
+
+#Sandbox Control
+selectedSandboxPart = 11
 
 #Sound Control
 pygame.mixer.init()
@@ -100,7 +104,7 @@ def softReset(looped):
 #Game States: MainMenu Gameplay, How To Play, Map
 state = "MainMenu"  #Where the game starts
 selectedOption = 0
-menuOptions = ["Start Game", "How To Play", "Quit"]
+menuOptions = ["Start Game", "How To Play", "Sandbox", "Quit"]
 paused = False
 
 #region Gameplay
@@ -350,19 +354,28 @@ while run:
                     elif selectedOption == 1:
                         state = "How To Play"
                     elif selectedOption == 2:
+                        state = "Sandbox"
+                    elif selectedOption == 3:
                         run = False
         elif state == "Gameplay":
             if not gamer.alive:
                 state = "GameOver"
                 gameOverTime = pygame.time.get_ticks()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                if not paused:
-                    paused = True
-                    pauseStartTime = pygame.time.get_ticks()
-                else:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if not paused:
+                        paused = True
+                        pauseStartTime = pygame.time.get_ticks()
+                    else:
+                        paused = False
+                        pausedTimeAccumulated += pygame.time.get_ticks() - pauseStartTime
+                        pauseStartTime = None
+                elif event.key == pygame.K_q and paused:
+                    reset()
+                    state = "MainMenu"
                     paused = False
-                    pausedTimeAccumulated += pygame.time.get_ticks() - pauseStartTime
-                    pauseStartTime = None
+                    pausedStartTime = None
+                    pausedTimeAccumulated = 0
             if enemiesKilled >= enemiesLeft:
                 if currentNode != "Boss" or (currentNode == "Boss" and not bosses):
                     rewardType = LEVEL_DATA[currentNode]["Rewards"]
@@ -532,6 +545,9 @@ while run:
                                                          currentShopSelection, shopDescFont, shopFont, shopPartsDecided, shopParts)
     elif state == "Reward":
         visualize.drawReward(gameScreen, rewardText, rewardDesc, font, smallFont, rewardBackground)
+    elif state == "Sandbox":
+        totalParts = parts.commonParts + parts.rareParts + parts.legendaryParts + parts.bossParts
+        visualize.drawSandboxPartsSelection(gameScreen, font, smallFont, totalParts, selectedSandboxPart, gamer)
     elif state == "GameOver":
         visualize.drawGameOver(gameScreen)
         if pygame.time.get_ticks() - gameOverTime > 3000:
@@ -561,14 +577,25 @@ while run:
     
     #Paused Game Code
     if state == "Gameplay" and paused:
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.SRCALPHA)
+        overlay.fill((0,0,0,150))
+        gameScreen.blit(overlay, (0,0))
+        
+        #Pause Text
         pauseFont = pygame.font.Font(None, 120)
         pauseText = pauseFont.render("PAUSED", True, (255,255,255))
         textRect = pauseText.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
         gameScreen.blit(pauseText, textRect)
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.SRCALPHA)
-        overlay.fill((0,0,0,150))
-        gameScreen.blit(overlay, (0,0))
-        gameScreen.blit(pauseText, textRect)
+        
+        #Return to Game Text
+        returnText = smallFont.render("Press ESC to return to game", True, (255,255,255))
+        returnRect = returnText.get_rect(center=(SCREEN_WIDTH//4, SCREEN_HEIGHT - SCREEN_HEIGHT//4))
+        gameScreen.blit(returnText, returnRect)
+
+        #Return to Main Menu Text
+        returnText = smallFont.render("Press Q to return to Main Menu", True, (255,255,255))
+        returnRect = returnText.get_rect(center=(SCREEN_WIDTH - SCREEN_WIDTH//4, SCREEN_HEIGHT - SCREEN_HEIGHT//4))
+        gameScreen.blit(returnText, returnRect)
 
     #Resizing Window
     windowWidth, windowHeight = screen.get_size()

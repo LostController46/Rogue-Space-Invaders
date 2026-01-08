@@ -3,6 +3,7 @@
 Adjusted Charger to more forgiving. Sorted Development Log.
 Made adjustments to Charger Data Sample. Fixed Defender to hopefully always shoot. Fixed bug where
 getting to the final level on the map made endless enemies spawn with no escape.
+Pausing can take you back to main menu now.
 
 Current Road Map
 1. Fix bugs and balance changes.
@@ -11,12 +12,13 @@ Current Road Map
     2b. Risk health to get unique rare parts
     2c. Double dip event. Double level rewards
 3. Add new bosses into the game.
-    3a.  (Fusion of Charger & Combustion)
+    3a. The Driller (Fusion of Charger & Combustion)
     3b. The Destroyer (Fusion of Shooter & Combustion)
     3c. The Erratic (Fusion of Basic & Blocker)
     3d. The Swarm (Fusion of Basic & Combustion)
 4. Add a Sandbox Mode to allow all sorts of testing. Survive endless waves of enemies and bosses.
 5. Add the later maps with stronger enemy types.
+6. Change Parts to have a picture instead of name.
 
 12/11/25
 Game should now be able to be downloaded by others as an executable. Version 1.0 release!

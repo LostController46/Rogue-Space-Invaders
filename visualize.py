@@ -35,6 +35,9 @@ def drawMainMenu(selected, gameScreen, font, font2, menuOptions):
         color = (255, 255, 0) if i == selected else (255, 255, 255)
         text = font2.render(option, True, color)
         gameScreen.blit(text, (gameScreen.get_width() // 2 - text.get_width() // 2, 250 + i * 60))
+
+    creator = font2.render("Created and developed by LostController46", True, (255, 255, 255))
+    gameScreen.blit(creator, (gameScreen.get_width() // 2 - creator.get_width() // 2, 800))
 #endregion
 
 #region How To Play
@@ -584,3 +587,28 @@ def drawEndScreen(gameScreen, font, font2):
     gameScreen.blit(choice1, (gameScreen.get_width() // 2 - choice1.get_width() // 2, 400))
     gameScreen.blit(choice2, (gameScreen.get_width() // 2 - choice2.get_width() // 2, 460))
 #endregion
+
+#region Sandbox
+def drawSandboxPartsSelection(gameScreen, font, font2, totalPartsList, selectedPart, player):
+    gameScreen.fill((0,0,0))
+
+    #Information Text
+    text = font2.render("Choose your parts. Can choose multiple of the same parts.", True, (255, 255, 255))
+    gameScreen.blit(text, (gameScreen.get_width() // 2 - text.get_width() // 2, 100))
+    help = font2.render("Use A/D to move through the list of parts. Enter to add them.", True, (255, 255, 255))
+    gameScreen.blit(help, (gameScreen.get_width() // 2 - text.get_width() // 2, 200))
+
+    #Part Text
+    currentPart = totalPartsList[selectedPart]
+    nameText = font2.render(currentPart.name, True, (255, 255, 255))
+    gameScreen.blit(nameText, (gameScreen.get_width() // 2 - text.get_width() // 2, 300))
+    descText = font2.render(currentPart.desc, True, (255, 255, 255))
+    gameScreen.blit(descText, (gameScreen.get_width() // 2 - text.get_width() // 2, 400))
+    #implement textwraping
+
+    drawMiddleHUD(gameScreen, player, font, font2)
+    #Exit Text
+    exit = font.render("Use A/D to move through the list of parts.", True, (255, 255, 255))
+    gameScreen.blit(exit, (gameScreen.get_width() // 2 - text.get_width() // 2, 700))
+
+#def drawSandboxEnemySelection():
