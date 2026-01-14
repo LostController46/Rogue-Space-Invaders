@@ -12,6 +12,13 @@ blockerSprite = pygame.image.load(resourcePath("images/Blocker.png"))
 combustionSprite = pygame.image.load(resourcePath("images/Combustion.png"))
 defenderSprite = pygame.image.load(resourcePath("images/Boss.png"))
 defenderGunsSprite = pygame.image.load(resourcePath("images/BossGun.png"))
+masterEnemyList = {"Basic": basicSprite,
+                 "Shooter": shooterSprite,
+                 "Charger": chargerSprite,
+                 "Blocker": blockerSprite,
+                 "Combustion": combustionSprite,
+                 "Defender": defenderSprite}
+
 
 def textWrapping(surface, text, font, color, rect, length, lineSpacing=5):
     maxChars = length  # adjust to fit your box width
@@ -102,7 +109,7 @@ def drawHowToPlay(gameScreen, font, font2, currentPage):
                 descRect,
                 length = 55)
             y += sprite.get_height() + 50
-    backText = font2.render("Press ESC to return                Press A/D to go between pages", True, (255, 255, 0))
+    backText = font2.render("Press Q to return                Press A/D to go between pages", True, (255, 255, 0))
     gameScreen.blit(backText, (gameScreen.get_width() // 2 - backText.get_width() // 2, gameScreen.get_height() - 75))
 #endregion
 
@@ -132,7 +139,7 @@ def drawMiddleHUD(screen, player, font, font2):
     text = font.render("Parts:", True, (200, 200, 200))
     screen.blit(text, (hudRect.x + 10, hudRect.y + 20))
     xOffset = hudRect.x + 160
-    yOffset = hudRect.y + 5
+    yOffset = hudRect.y
     space = 25
     if not player.parts:
         text = font.render("None", True, (150,150,150))
@@ -611,7 +618,7 @@ def drawSandboxPartsSelection(gameScreen, font, font2, totalPartsList, selectedP
 
     drawMiddleHUD(gameScreen, player, font, font2)
     #Exit Text
-    exit = font.render("Use A/D to move through the list of parts.", True, (255, 255, 255))
+    exit = font2.render("Q can be used at anytime to quit.", True, (255, 255, 255))
     gameScreen.blit(exit, (gameScreen.get_width() // 2 - exit.get_width() // 2, 725))
 
     #Makes a leave prompt where the weapons would be
@@ -619,7 +626,60 @@ def drawSandboxPartsSelection(gameScreen, font, font2, totalPartsList, selectedP
     pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
     pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
     leaveTextRect = pygame.Rect(hudRect.x + 5, hudRect.y + 5, hudRect.width - 10,  hudRect.height - 10)
-    leaveText = "Press Space to Leave"
+    leaveText = "Press Space for Enemies"
     textWrapping(gameScreen, leaveText, font2, (255, 255, 255), leaveTextRect, length = 10)
 
-#def drawSandboxEnemySelection():
+def drawSandboxEnemySelection(gameScreen, font, font2, totalEnemyList, selectedEnemy, enemyIndex, sandboxEnemies):
+    gameScreen.fill((0,0,0))
+
+    #Enemy Box
+    enemyRect = pygame.Rect(0, gameScreen.get_height() - 160, 1080, 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), enemyRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), enemyRect, 2)
+    text = font.render("Enemies:", True, (200, 200, 200))
+    gameScreen.blit(text, (enemyRect.x + 10, enemyRect.y + 20))
+    
+    xOffset = enemyRect.x + 250
+    yOffset = enemyRect.y + 30
+    if not sandboxEnemies:
+        text = font2.render("None", True, (150, 150, 150))
+        gameScreen.blit(text, (xOffset, yOffset))
+    else:
+        maxWidth = enemyRect.width - 130
+        rowX = xOffset
+        rowY = yOffset
+        rowSpacing = 30
+
+        for enemy in sandboxEnemies:
+            enemySurface = font2.render(enemy, True, (200, 200, 200))
+            enemyWidth = enemySurface.get_width()
+            if rowX + enemyWidth > enemyRect.x + maxWidth:
+                rowX = xOffset
+                rowY += rowSpacing
+            gameScreen.blit(enemySurface, (rowX, rowY))
+            rowX += enemyWidth + 20
+    
+    #Information Text
+    textRect = pygame.Rect(0,0, gameScreen.get_width(), gameScreen.get_height() - 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), textRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), textRect, 2)
+    text = font2.render("Choose your enemies.", True, (255, 255, 255))
+    gameScreen.blit(text, (gameScreen.get_width() // 2 - text.get_width() // 2, 50))
+    help = font2.render("Use A/D to move through the list of enemies. Enter to add or remove them.", True, (255, 255, 255))
+    gameScreen.blit(help, (gameScreen.get_width() // 2 - help.get_width() // 2, 100))
+
+    #Enemy Text
+    currentEnemy = totalEnemyList[enemyIndex]
+    nameColor = (255, 255, 0) if selectedEnemy[1] == 0 else (255, 255, 255)
+    nameText = font2.render(currentEnemy, True, nameColor)
+    gameScreen.blit(nameText, (gameScreen.get_width() // 2 - nameText.get_width() // 2, 225))
+    sprite = masterEnemyList[currentEnemy]
+    gameScreen.blit(sprite, (gameScreen.get_width() // 2 - sprite.get_width() // 2, 300))
+    
+    #Makes a leave prompt where the weapons would be
+    hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
+    pygame.draw.rect(gameScreen, (50, 50, 50), hudRect)
+    pygame.draw.rect(gameScreen, (200, 200, 200), hudRect, 2)
+    leaveTextRect = pygame.Rect(hudRect.x + 5, hudRect.y + 5, hudRect.width - 10,  hudRect.height - 10)
+    leaveText = "Press Space to Fight"
+    textWrapping(gameScreen, leaveText, font2, (255, 255, 255), leaveTextRect, length = 10)

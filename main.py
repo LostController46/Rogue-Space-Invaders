@@ -60,6 +60,11 @@ finishedShopping = False
 #Sandbox Control
 selectedSandboxPart = 0
 totalParts = parts.commonParts + parts.rareParts + parts.legendaryParts + parts.bossParts
+doneSandboxParts = False
+selectedEnemy = [0, 0]
+totalEnemies = ["Basic", "Shooter", "Blocker", "Charger", "Combustion"]
+sandboxEnemies = []
+enemyIndex = 0
 
 #Sound Control
 pygame.mixer.init()
@@ -73,7 +78,7 @@ def getGameTime():
 
 #region Resetting Game
 def reset():
-    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag, bossSpawned
+    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag, bossSpawned, doneSandboxParts
     bullet = []
     gamer = player.Player(bulletList = bullet)
     enemies = []
@@ -87,6 +92,7 @@ def reset():
     bossFlag = False
     bossSpawned = False
     currentNode = "Start"
+    doneSandboxParts = False
 def softReset(looped):
     global enemies, enemyBullets, enemiesKilled, bosses, enemiesDecided, mapCreated, currentNode, bossFlag, bossSpawned
     enemies = []
@@ -140,6 +146,9 @@ def gameplay():
         elif howLarge == "Massive":
             enemiesDecided = True
             enemiesLeft = 45
+        elif howLarge == "Endless":
+            enemiesDecided = True
+            #Have number glitch to make it seem more endless?
         if whichEvent == "extraEnemies":
             enemiesLeft += random.randint(5,10)
         if hasattr(gamer, "regain") and gamer.regain > 0:
@@ -522,18 +531,44 @@ while run:
                 currentPage = min(currentPage + 1, totalPages)
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_a:
                 currentPage = max(currentPage - 1, 1)
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
                 state = "MainMenu"
         elif state == "Sandbox":
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_d:
-                    selectedSandboxPart = (selectedSandboxPart + 1) % len(totalParts)
-                elif event.key == pygame.K_a:
-                    selectedSandboxPart = (selectedSandboxPart - 1) % len(totalParts)
-                if event.key == pygame.K_RETURN:
-                    gamer.parts.append(totalParts[selectedSandboxPart])
-                if event.key == pygame.K_q:
-                    quitToMainMenu()
+                if not doneSandboxParts:
+                    if event.key == pygame.K_d:
+                        selectedSandboxPart = (selectedSandboxPart + 1) % len(totalParts)
+                    elif event.key == pygame.K_a:
+                        selectedSandboxPart = (selectedSandboxPart - 1) % len(totalParts)
+                    if event.key == pygame.K_RETURN:
+                        gamer.parts.append(totalParts[selectedSandboxPart])
+                    if event.key == pygame.K_q:
+                        quitToMainMenu()
+                    if event.key == pygame.K_SPACE:
+                        doneSandboxParts = True
+                else:
+                    if event.key == pygame.K_w:
+                        selectedEnemy[1] = max(0, selectedEnemy[1] - 1)
+                    elif event.key == pygame.K_s:
+                        selectedEnemy[1] = max(0, selectedEnemy[1] + 1)
+                    if selectedEnemy[1] == 0:
+                        if event.key == pygame.K_d:
+                            enemyIndex = (enemyIndex + 1) % len(totalEnemies)
+                        elif event.key == pygame.K_a:
+                            enemyIndex = (enemyIndex - 1) % len(totalEnemies)
+                    elif selectedEnemy[1] == 1:
+                        if event.key == pygame.K_d:
+                            gamer.currentLevel = min(10, gamer.currentLevel + 1)
+                        elif event.key == pygame.K_a:
+                            gamer.currentLevel = max(1, gamer.currentLevel - 1)
+                    if event.key == pygame.K_RETURN and selectedEnemy[1] == 0:
+                        enemyName = totalEnemies[enemyIndex]
+                        if enemyName in sandboxEnemies:
+                            sandboxEnemies.remove(enemyName)
+                        else:
+                            sandboxEnemies.append(enemyName)
+                    if event.key == pygame.K_q:
+                        quitToMainMenu()
         elif state == "EndScreen":
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
@@ -559,7 +594,10 @@ while run:
     elif state == "Reward":
         visualize.drawReward(gameScreen, rewardText, rewardDesc, font, smallFont, rewardBackground)
     elif state == "Sandbox":
-        visualize.drawSandboxPartsSelection(gameScreen, font, smallFont, totalParts, selectedSandboxPart, gamer)
+        if not doneSandboxParts:
+            visualize.drawSandboxPartsSelection(gameScreen, font, smallFont, totalParts, selectedSandboxPart, gamer)
+        else: 
+            visualize.drawSandboxEnemySelection(gameScreen, font, smallFont, totalEnemies, selectedEnemy, enemyIndex, sandboxEnemies)
     elif state == "GameOver":
         visualize.drawGameOver(gameScreen)
         if pygame.time.get_ticks() - gameOverTime > 3000:
