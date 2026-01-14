@@ -263,6 +263,7 @@ class Player():
                     #print("Released laser key", chargeDuration, fullyCharged)
                     if fullyCharged and currentTime - self.lastShotTime >= self.laserCooldown:
                         self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", currentTime = currentTime, charged= True))
+                        self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", currentTime = currentTime, charged= True))
                         laserShot.play(maxtime = 1000)
                         self.lastShotTime = currentTime
         elif self.currentWeapon == "Missile":
@@ -273,17 +274,19 @@ class Player():
                 #Left Missile
                 self.bulletList.append(bullets.Missile(self.rect.centerx - offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
-                #Extra Missiles
-                if self.dualLauncher:
-                    self.bulletList.append(bullets.Missile(self.rect.centerx - (offset * 2), missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
-                                    color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
                 #Right Missile
                 self.bulletList.append(bullets.Missile(self.rect.centerx + offset, missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
                 #Extra Missiles
+                quadLauncherCount = sum(1 for part in self.parts if part.name == "[R] Quad Launcher")
                 if self.dualLauncher:
-                    self.bulletList.append(bullets.Missile(self.rect.centerx + (offset * 2), missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
+                    for i in range(quadLauncherCount):
+                        repeat = i + 2
+                        self.bulletList.append(bullets.Missile(self.rect.centerx - (offset * repeat), missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
+                                        color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
+                        self.bulletList.append(bullets.Missile(self.rect.centerx + (offset * repeat), missileY, (enemyList or []) + (bossList or []), speed = self.missileSpeed, damage=(self.missileDamage + self.damage), 
                                     color= (255, 180, 100), duration = self.missileDuration, currentTime = currentTime))
+                    
                 missileShot.play(maxtime = 1500)
                 self.lastShotTime = currentTime
         if self.immune and currentTime - self.immuneTime >= self.immuneFrames:

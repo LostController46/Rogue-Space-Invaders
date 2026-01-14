@@ -65,6 +65,16 @@ selectedEnemy = [0, 0]
 totalEnemies = ["Basic", "Shooter", "Blocker", "Charger", "Combustion"]
 sandboxEnemies = []
 enemyIndex = 0
+nextBossAt = 50
+bossInterval = 50
+LEVEL_DATA = {
+    "SANDBOX": {
+        "Rewards": None,
+        "Enemies": [],
+        "Horde": "",
+        "Event": None
+    }
+}
 
 #Sound Control
 pygame.mixer.init()
@@ -78,7 +88,7 @@ def getGameTime():
 
 #region Resetting Game
 def reset():
-    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag, bossSpawned, doneSandboxParts
+    global gamer, bullet, enemies, enemyBullets, enemiesKilled, bosses, mapCreated, paused, gameOverTime, enemiesDecided, currentNode, bossFlag, bossSpawned, doneSandboxParts, finishedShopping
     bullet = []
     gamer = player.Player(bulletList = bullet)
     enemies = []
@@ -93,6 +103,7 @@ def reset():
     bossSpawned = False
     currentNode = "Start"
     doneSandboxParts = False
+    finishedShopping = False
 def softReset(looped):
     global enemies, enemyBullets, enemiesKilled, bosses, enemiesDecided, mapCreated, currentNode, bossFlag, bossSpawned
     enemies = []
@@ -129,6 +140,8 @@ def gameplay():
     global enemiesLeft
     global enemiesOnScreen
     global bossFlag
+    global nextBossAt
+    global bossInterval
     levelInfo = LEVEL_DATA[currentNode]
     spawnWhat = levelInfo["Enemies"]
     howLarge = levelInfo["Horde"]
@@ -148,12 +161,16 @@ def gameplay():
             enemiesLeft = 45
         elif howLarge == "Endless":
             enemiesDecided = True
-            #Have number glitch to make it seem more endless?
+            enemiesLeft = 1000000
+            #Prevents crashing
+            if not spawnWhat:
+                spawnWhat.append("Basic")
         if whichEvent == "extraEnemies":
             enemiesLeft += random.randint(5,10)
         if hasattr(gamer, "regain") and gamer.regain > 0:
             gamer.currentHealth = min(gamer.currentHealth + gamer.regain, gamer.maxHealth)
-
+    if howLarge == "Endless":
+        fakeEnemyCount = random.randint(1, 1000)
     key = pygame.key.get_pressed()
     currentTime = getGameTime()
     
@@ -214,6 +231,11 @@ def gameplay():
             enemyDeath.play()
             if enemy.countsTowardsKills:
                 enemiesKilled += 1
+                if howLarge == "Endless" and enemiesKilled >= nextBossAt :
+                    boss = attackers.Defender(SCREEN_WIDTH//2 - 75, -150)
+                    bosses.append(boss)
+                    bossSpawned = True
+                    nextBossAt += bossInterval
         for shot in bullet[:]:
             if enemy.rect.colliderect(shot.rect) and not isinstance(shot, bullets.LaserAfterimage):
                 if isinstance(shot, bullets.Laser):
@@ -301,8 +323,15 @@ def gameplay():
             boss.update(currentTime, paused, enemyBullets, gamer)
             boss.draw(gameScreen)
         else:
-            bossFlag = True
-    visualize.drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled, smallFont, enemyLeftFont)
+            if howLarge == "Endless":
+                bossSpawned = False
+            else:
+                bossFlag = True
+            bosses.remove(boss)
+    if howLarge == "Endless":
+        visualize.drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, fakeEnemyCount, enemiesKilled, smallFont, enemyLeftFont)
+    else: 
+        visualize.drawLeftHUD(gameScreen, gamer.currentHealth, gamer.cash, gamer.currentLevel, enemiesLeft, enemiesKilled, smallFont, enemyLeftFont)
     visualize.drawMiddleHUD(gameScreen, gamer, font, smallFont)
     visualize.drawRightHUD(gameScreen, gamer.weaponList, gamer.currentWeapon, font)
 #endregion
@@ -517,6 +546,8 @@ while run:
                     elif event.key == pygame.K_SPACE:
                         finishedShopping = True
                         shopPartsDecided = False
+            elif doneSandboxParts:
+                state = "Sandbox"
             else:
                 state = "Map"
                 finishedShopping = False
@@ -542,31 +573,42 @@ while run:
                         selectedSandboxPart = (selectedSandboxPart - 1) % len(totalParts)
                     if event.key == pygame.K_RETURN:
                         gamer.parts.append(totalParts[selectedSandboxPart])
+                        gamer.updateStats()
                     if event.key == pygame.K_q:
                         quitToMainMenu()
                     if event.key == pygame.K_SPACE:
                         doneSandboxParts = True
                 else:
+                    #Enemy Selection
                     if event.key == pygame.K_w:
                         selectedEnemy[1] = max(0, selectedEnemy[1] - 1)
                     elif event.key == pygame.K_s:
-                        selectedEnemy[1] = max(0, selectedEnemy[1] + 1)
+                        selectedEnemy[1] = min(1, selectedEnemy[1] + 1)
                     if selectedEnemy[1] == 0:
                         if event.key == pygame.K_d:
                             enemyIndex = (enemyIndex + 1) % len(totalEnemies)
                         elif event.key == pygame.K_a:
                             enemyIndex = (enemyIndex - 1) % len(totalEnemies)
+                    #Enemy Level
                     elif selectedEnemy[1] == 1:
                         if event.key == pygame.K_d:
-                            gamer.currentLevel = min(10, gamer.currentLevel + 1)
+                            gamer.currentLevel = min(9, gamer.currentLevel + 1)
                         elif event.key == pygame.K_a:
-                            gamer.currentLevel = max(1, gamer.currentLevel - 1)
+                            gamer.currentLevel = max(0, gamer.currentLevel - 1)
+                    #Add Enemy
                     if event.key == pygame.K_RETURN and selectedEnemy[1] == 0:
                         enemyName = totalEnemies[enemyIndex]
                         if enemyName in sandboxEnemies:
                             sandboxEnemies.remove(enemyName)
                         else:
                             sandboxEnemies.append(enemyName)
+                    if event.key == pygame.K_SPACE:
+                        currentNode = "SANDBOX"
+                        LEVEL_DATA[currentNode]["Rewards"] = None
+                        LEVEL_DATA[currentNode]["Enemies"] = sandboxEnemies
+                        LEVEL_DATA[currentNode]["Horde"] = "Endless"
+                        #LEVEL_DATA[currentNode]["Event"] = 
+                        state = "Gameplay"
                     if event.key == pygame.K_q:
                         quitToMainMenu()
         elif state == "EndScreen":
@@ -596,8 +638,14 @@ while run:
     elif state == "Sandbox":
         if not doneSandboxParts:
             visualize.drawSandboxPartsSelection(gameScreen, font, smallFont, totalParts, selectedSandboxPart, gamer)
+        elif not finishedShopping:
+            gamer.cash = 2500
+            state = "Shop"
+            shopPartsDecided, shopParts = visualize.drawShop(gameScreen, gamer, font, smallFont, 
+                                                         enemiesLeft, enemiesKilled, enemyLeftFont, 
+                                                         currentShopSelection, shopDescFont, shopFont, shopPartsDecided, shopParts)
         else: 
-            visualize.drawSandboxEnemySelection(gameScreen, font, smallFont, totalEnemies, selectedEnemy, enemyIndex, sandboxEnemies)
+            visualize.drawSandboxEnemySelection(gameScreen, font, smallFont, totalEnemies, selectedEnemy, enemyIndex, sandboxEnemies, gamer)
     elif state == "GameOver":
         visualize.drawGameOver(gameScreen)
         if pygame.time.get_ticks() - gameOverTime > 3000:

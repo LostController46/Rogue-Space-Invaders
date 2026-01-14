@@ -1,9 +1,18 @@
 
-1/5/25 - 1/??/25
+1/5/25 - 1/14/25
 Adjusted Charger to more forgiving. Sorted Development Log.
 Made adjustments to Charger Data Sample. Fixed Defender to hopefully always shoot. Fixed bug where
 getting to the final level on the map made endless enemies spawn with no escape.
-Pausing can take you back to main menu now.
+Pausing can take you back to main menu now. 
+
+Made it so lasers spawn in groups of two, to help increase viability.
+Quad Launcher has been buffed to stack. More Missiles, less damage.
+Cooling System has increased charging speed reduction.
+Charged Battery has increased charging speed reduction for lasers.
+Reduced increase for parts that inceased movement speed a touch. Reduced Warp Speed Booster's price.
+
+Sandbox mode is complete. Allows the player to test out builds against enemies and see all of the
+parts that can be collected in the game.
 
 Current Road Map
 1. Fix bugs and balance changes.

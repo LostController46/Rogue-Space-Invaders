@@ -145,7 +145,7 @@ def drawMiddleHUD(screen, player, font, font2):
         text = font.render("None", True, (150,150,150))
         screen.blit(text, (xOffset, yOffset + space))
         return
-    maxWidth = hudRect.width - 100
+    maxWidth = hudRect.width - 50
     rowX = xOffset
     rowY = yOffset + space
     rowSpacing = 25
@@ -629,7 +629,7 @@ def drawSandboxPartsSelection(gameScreen, font, font2, totalPartsList, selectedP
     leaveText = "Press Space for Enemies"
     textWrapping(gameScreen, leaveText, font2, (255, 255, 255), leaveTextRect, length = 10)
 
-def drawSandboxEnemySelection(gameScreen, font, font2, totalEnemyList, selectedEnemy, enemyIndex, sandboxEnemies):
+def drawSandboxEnemySelection(gameScreen, font, font2, totalEnemyList, selectedEnemy, enemyIndex, sandboxEnemies, player):
     gameScreen.fill((0,0,0))
 
     #Enemy Box
@@ -675,6 +675,13 @@ def drawSandboxEnemySelection(gameScreen, font, font2, totalEnemyList, selectedE
     gameScreen.blit(nameText, (gameScreen.get_width() // 2 - nameText.get_width() // 2, 225))
     sprite = masterEnemyList[currentEnemy]
     gameScreen.blit(sprite, (gameScreen.get_width() // 2 - sprite.get_width() // 2, 300))
+
+    #Enemy Level
+    nameColor = (255, 255, 0) if selectedEnemy[1] == 1 else (255, 255, 255)
+    levelInfo = font2.render("Level of Enemies", True, nameColor)
+    gameScreen.blit(levelInfo, (gameScreen.get_width() // 2 - levelInfo.get_width() // 2, 360))
+    levelText = font2.render(str(player.currentLevel), True, nameColor)
+    gameScreen.blit(levelText, (gameScreen.get_width() // 2 - levelText.get_width() // 2, 390))
     
     #Makes a leave prompt where the weapons would be
     hudRect = pygame.Rect(gameScreen.get_width() - 200, gameScreen.get_height() - 160, 200, 160)
