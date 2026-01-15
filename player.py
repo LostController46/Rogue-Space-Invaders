@@ -236,16 +236,23 @@ class Player():
                 self.charging = False 
                 chargeDuration = currentTime - self.chargingStart
                 fullyCharged = chargeDuration >= self.chargingSpeed
-                chargedShotX = self.rect.centerx - bullets.bulletWidth
+                chargedShotX = self.rect.centerx - (bullets.bulletWidth // 2)
                 chargedShotY = self.rect.top
                 if fullyCharged:
                     self.bulletList.append(bullets.Bullet(chargedShotX, chargedShotY, bullets.bulletWidth, bullets.bulletHeight, 
                                         bullets.chargedShotSPD, (self.chargeShotDamage + self.damage), color=(235, 180, 52), 
                                         direction = "N", charged=True))
+                    self.bulletList.append(bullets.Bullet(chargedShotX - 20, chargedShotY + 10, bullets.bulletWidth, bullets.bulletHeight, 
+                                        bullets.chargedShotSPD, (self.chargeShotDamage + self.damage), color=(235, 180, 52), 
+                                        direction = "N", charged=True))
+                    self.bulletList.append(bullets.Bullet(chargedShotX + 20, chargedShotY + 10, bullets.bulletWidth, bullets.bulletHeight, 
+                                        bullets.chargedShotSPD, (self.chargeShotDamage + self.damage), color=(235, 180, 52), 
+                                        direction = "N", charged=True))
+                    bulletShot.play(maxtime = 500)
                     self.lastShotTime = currentTime
             #Normal shot
             elif key[pygame.K_w] and currentTime - self.lastShotTime >= self.shotDelay and not key[pygame.K_RSHIFT]:
-                bulletX = self.rect.centerx - bullets.bulletWidth
+                bulletX = self.rect.centerx - (bullets.bulletWidth // 2)
                 bulletY = self.rect.top
                 self.bulletList.append(bullets.Bullet(bulletX, bulletY, bullets.bulletWidth, bullets.bulletHeight, 
                                     bullets.bulletSPD, (self.bulletDamage + self.damage), color=(255,255,255), direction = "N"))

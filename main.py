@@ -168,7 +168,7 @@ def gameplay():
             enemiesLeft += random.randint(5,10)
         if hasattr(gamer, "regain") and gamer.regain > 0:
             gamer.currentHealth = min(gamer.currentHealth + gamer.regain, gamer.maxHealth)
-    if howLarge == "Endless":
+    if howLarge == "Endless" or enemiesLeft <= 0:
         fakeEnemyCount = random.randint(1, 1000)
     key = pygame.key.get_pressed()
     currentTime = getGameTime()
