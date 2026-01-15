@@ -73,9 +73,8 @@ LEVEL_DATA = {
         "Enemies": [],
         "Horde": "",
         "Event": None
-    }
-}
-
+        }
+}                
 #Sound Control
 pygame.mixer.init()
 enemyDeath = pygame.mixer.Sound(resourcePath("sounds/enemyDeath.wav"))
@@ -185,6 +184,7 @@ def gameplay():
         elif isinstance(shot, bullets.Laser):
             shot.update(currentTime, paused)
             if shot.expired:
+                bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                 bullet.remove(shot)
         elif isinstance(shot, bullets.Missile):
             shot.target = (enemies or []) + (bosses or [])
@@ -238,10 +238,9 @@ def gameplay():
                     nextBossAt += bossInterval
         for shot in bullet[:]:
             if enemy.rect.colliderect(shot.rect) and not isinstance(shot, bullets.LaserAfterimage):
-                if isinstance(shot, bullets.Laser):
-                    bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                 enemy.takeDamage(gamer, "bullet", shot)
-                bullet.remove(shot)
+                if not isinstance(shot, bullets.Laser):
+                    bullet.remove(shot)
                 break
     for boss in bosses[:]: 
         for shot in bullet[:]: 
@@ -249,13 +248,19 @@ def gameplay():
             for gun, gunRect in boss.guns.items(): 
                 if shot.rect.colliderect(gunRect): 
                     boss.takeDamage(shot.damage, gun, charged=shot.charged) 
+                    if not isinstance(shot, bullets.Laser):
+                        bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                     bulletRemoved = True 
                     break 
                 if not bulletRemoved and shot.rect.colliderect(boss.rect): 
                     boss.takeDamage(shot.damage, charged=shot.charged)
+                    if not isinstance(shot, bullets.Laser):
+                        bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                     bulletRemoved = True
                 #For incase a bullet hit both the boss and gun
                 if bulletRemoved and shot in bullet:
+                    if not isinstance(shot, bullets.Laser):
+                        bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                     bullet.remove(shot)
     #Enemy & boss spawning & which type
     if enemiesKilled >= enemiesLeft and not bossSpawned and not paused and currentNode == "Boss":
@@ -603,6 +608,14 @@ while run:
                         else:
                             sandboxEnemies.append(enemyName)
                     if event.key == pygame.K_SPACE:
+                        LEVEL_DATA = {
+                            "SANDBOX": {
+                                "Rewards": None,
+                                "Enemies": [],
+                                "Horde": "",
+                                "Event": None
+                            }
+                        }
                         currentNode = "SANDBOX"
                         LEVEL_DATA[currentNode]["Rewards"] = None
                         LEVEL_DATA[currentNode]["Enemies"] = sandboxEnemies

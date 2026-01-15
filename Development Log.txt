@@ -5,7 +5,7 @@ Made adjustments to Charger Data Sample. Fixed Defender to hopefully always shoo
 getting to the final level on the map made endless enemies spawn with no escape.
 Pausing can take you back to main menu now. 
 
-Made it so lasers spawn in groups of two, to help increase viability.
+Made it so lasers can hit multiple enemies before disappearing.
 Quad Launcher has been buffed to stack. More Missiles, less damage.
 Cooling System has increased charging speed reduction.
 Charged Battery has increased charging speed reduction for lasers.

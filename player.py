@@ -262,8 +262,8 @@ class Player():
                     fullyCharged = chargeDuration >= self.laserChargeSpeed
                     #print("Released laser key", chargeDuration, fullyCharged)
                     if fullyCharged and currentTime - self.lastShotTime >= self.laserCooldown:
-                        self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", currentTime = currentTime, charged= True))
-                        self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", currentTime = currentTime, charged= True))
+                        #Update duration for later parts
+                        self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", duration = 400, currentTime = currentTime, charged= True))
                         laserShot.play(maxtime = 1000)
                         self.lastShotTime = currentTime
         elif self.currentWeapon == "Missile":
