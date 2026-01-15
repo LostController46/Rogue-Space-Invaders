@@ -57,6 +57,8 @@ class Laser(Bullet):
         self.timer = now
         self.activeTime = 0
         self.expired = False
+        self.damageCooldown = 150
+        self.lastDamageTime = 0
         self.updatePosition()
     def updatePosition(self):
         self.rect.centerx = self.gunRect.centerx

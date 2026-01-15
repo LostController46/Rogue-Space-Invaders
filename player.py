@@ -39,6 +39,7 @@ class Player():
                 "chargingSpeed": 800,                #The lower it is the faster the charge
                 "laserChargeSpeed": 2000,             #The lower it is the faster the charge speed
                 "laserCooldown": 1300,                #The lower it is the faster the cooldown
+                "laserDuration": 1000,                 #The higher it is the longer the laser lasts
                 "missileCooldown": 2000,              #The lower it is the faster the cooldown
                 "missileDuration": 3000,              #The high it is the longer the missiles last
                 "missileSpeed": 10,
@@ -102,6 +103,7 @@ class Player():
         self.chargingStart = 0
         self.laserChargeSpeed = 2000
         self.laserCooldown = 1300
+        self.laserDuration = 1000
         self.missileCooldown = 2000
         self.missileDuration = 3000
         self.missileSpeed = 10
@@ -262,8 +264,7 @@ class Player():
                     fullyCharged = chargeDuration >= self.laserChargeSpeed
                     #print("Released laser key", chargeDuration, fullyCharged)
                     if fullyCharged and currentTime - self.lastShotTime >= self.laserCooldown:
-                        #Update duration for later parts
-                        self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", duration = 400, currentTime = currentTime, charged= True))
+                        self.bulletList.append(bullets.Laser(self.rect, damage=(self.laserDamage + self.damage), direction = "N", duration = self.laserDuration, currentTime = currentTime, charged= True))
                         laserShot.play(maxtime = 1000)
                         self.lastShotTime = currentTime
         elif self.currentWeapon == "Missile":

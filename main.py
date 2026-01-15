@@ -238,8 +238,12 @@ def gameplay():
                     nextBossAt += bossInterval
         for shot in bullet[:]:
             if enemy.rect.colliderect(shot.rect) and not isinstance(shot, bullets.LaserAfterimage):
-                enemy.takeDamage(gamer, "bullet", shot)
-                if not isinstance(shot, bullets.Laser):
+                if isinstance(shot, bullets.Laser):
+                    if currentTime - shot.lastDamageTime >= shot.damageCooldown:
+                        enemy.takeDamage(gamer, "bullet", shot)
+                        shot.lastDamageTime = currentTime
+                else:
+                    enemy.takeDamage(gamer, "bullet", shot)
                     bullet.remove(shot)
                 break
     for boss in bosses[:]: 
@@ -248,18 +252,18 @@ def gameplay():
             for gun, gunRect in boss.guns.items(): 
                 if shot.rect.colliderect(gunRect): 
                     boss.takeDamage(shot.damage, gun, charged=shot.charged) 
-                    if not isinstance(shot, bullets.Laser):
+                    if isinstance(shot, bullets.Laser):
                         bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                     bulletRemoved = True 
                     break 
                 if not bulletRemoved and shot.rect.colliderect(boss.rect): 
                     boss.takeDamage(shot.damage, charged=shot.charged)
-                    if not isinstance(shot, bullets.Laser):
+                    if isinstance(shot, bullets.Laser):
                         bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                     bulletRemoved = True
                 #For incase a bullet hit both the boss and gun
                 if bulletRemoved and shot in bullet:
-                    if not isinstance(shot, bullets.Laser):
+                    if isinstance(shot, bullets.Laser):
                         bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                     bullet.remove(shot)
     #Enemy & boss spawning & which type
@@ -321,7 +325,7 @@ def gameplay():
             gamer.takeDamage(enemyBull.damage, currentTime, False)
             if not isinstance(enemyBull, bullets.Laser):
                 enemyBullets.remove(enemyBull)
-            continue
+                continue
         enemyBull.draw(gameScreen)
     for boss in bosses:
         if boss.alive:

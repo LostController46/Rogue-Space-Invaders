@@ -1,5 +1,5 @@
 
-1/5/25 - 1/14/25
+1/5/25 - 1/15/25
 Adjusted Charger to more forgiving. Sorted Development Log.
 Made adjustments to Charger Data Sample. Fixed Defender to hopefully always shoot. Fixed bug where
 getting to the final level on the map made endless enemies spawn with no escape.
