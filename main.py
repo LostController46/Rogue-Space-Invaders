@@ -182,6 +182,7 @@ def gameplay():
             if shot.timer <= 0:
                 bullet.remove(shot)
         elif isinstance(shot, bullets.Laser):
+            shot.frameHit = False
             shot.update(currentTime, paused)
             if shot.expired:
                 bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
@@ -237,33 +238,39 @@ def gameplay():
                     bossSpawned = True
                     nextBossAt += bossInterval
         for shot in bullet[:]:
-            if enemy.rect.colliderect(shot.rect) and not isinstance(shot, bullets.LaserAfterimage):
-                if isinstance(shot, bullets.Laser):
-                    if currentTime - shot.lastDamageTime >= shot.damageCooldown:
+            if not paused:
+                if enemy.rect.colliderect(shot.rect) and not isinstance(shot, bullets.LaserAfterimage):
+                    if isinstance(shot, bullets.Laser) and not getattr(shot, "frameHit", False):
+                        if currentTime - shot.lastDamageTime >= shot.damageCooldown:
+                            enemy.takeDamage(gamer, "bullet", shot)
+                            shot.frameHit = True
+                            shot.lastDamageTime = currentTime
+                    else:
                         enemy.takeDamage(gamer, "bullet", shot)
-                        shot.lastDamageTime = currentTime
-                else:
-                    enemy.takeDamage(gamer, "bullet", shot)
-                    bullet.remove(shot)
-                break
+                        bullet.remove(shot)
+                    break
     for boss in bosses[:]: 
         for shot in bullet[:]: 
+            if paused:
+                break
             bulletRemoved = False 
             for gun, gunRect in boss.guns.items(): 
                 if shot.rect.colliderect(gunRect): 
                     boss.takeDamage(shot.damage, gun, charged=shot.charged) 
-                    if isinstance(shot, bullets.Laser):
+                    if isinstance(shot, bullets.Laser) and not getattr(shot, "frameHit", False):
                         bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
+                        shot.frameHit = True
                     bulletRemoved = True 
                     break 
                 if not bulletRemoved and shot.rect.colliderect(boss.rect): 
                     boss.takeDamage(shot.damage, charged=shot.charged)
-                    if isinstance(shot, bullets.Laser):
+                    if isinstance(shot, bullets.Laser) and not getattr(shot, "frameHit", False):
                         bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
+                        shot.frameHit = True
                     bulletRemoved = True
                 #For incase a bullet hit both the boss and gun
                 if bulletRemoved and shot in bullet:
-                    if isinstance(shot, bullets.Laser):
+                    if isinstance(shot, bullets.Laser) and not getattr(shot, "frameHit", False):
                         bullet.append(bullets.LaserAfterimage(shot, duration = 3000, charged = False))
                     bullet.remove(shot)
     #Enemy & boss spawning & which type
